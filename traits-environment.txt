@@ -90,7 +90,7 @@ model {
 
   ## prior on trait component of species random effect
   ##
-  ## start with independent exponential priors on each standard
+  ## start with independent gamma priors on each standard
   ## deviation
   ##
   for (i in 1:n.dim) {

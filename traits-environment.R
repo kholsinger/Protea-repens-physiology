@@ -7,13 +7,14 @@ debug <- FALSE
 plot <- TRUE
 print <- TRUE
 report.DIC <- TRUE
+full.data <- FALSE
 
 gamma.rate.resid <- 1.0
 gamma.shape.resid <- 1.0
 gamma.rate.species <- 1.0
 gamma.shape.species <-  1.0
-beta.par <- 6
-max.r <- 0.5
+beta.par <- 32
+max.r <- 1.0
 
 model.file="traits-environment.txt"
 
@@ -81,23 +82,60 @@ Dhat <- function(y, mu.mean, Sigma.mean) {
 
 ## read in appropriate data set
 ##
-
-
-combined <- read.csv("traits-environment.csv", na.strings=".", header=TRUE)
+if (full.data) {
+  combined <- read.csv("traits-environment.csv", na.strings=".", header=TRUE)
+} else {
+  combined <- read.csv("combined.csv", na.strings=".", header=TRUE)
+}
 
 ## prepare the data for JAGS
 ##
-species <- as.numeric(combined$source_pop) #as.numeric(combined$species)
-sla <- standardize(combined$SLA)
-area <- standardize(combined$leaf_area) #standardize(combined$Leaf_area)
-sd <- standardize(combined$stomatal_density) #standardize(combined$SD)
-lwr <- standardize(combined$LWR) #standardize(combined$Lwratio)
-spi <- standardize(combined$SPI)
-map <- standardize(combined$MAP)
-mat <- standardize(combined$MAT)
-ratio <- standardize(combined$ratio)
+if (full.data) {
+  species <- as.numeric(combined$source_pop)
+  sla <- standardize(combined$SLA)
+  area <- standardize(combined$leaf_area)
+  sd <- standardize(combined$stomatal_density)
+  lwr <- standardize(combined$LWR)
+  spi <- standardize(combined$SPI)
+  map <- standardize(combined$MAP)
+  mat <- standardize(combined$MAT)
+  ratio <- standardize(combined$rain_DecJanFeb)
+  ## set up temporary data frame for cleaning and manipulation
+  ##
+  tmp <- data.frame(species=species,
+                    sla=sla,
+                    area=area,
+                    sd=sd,
+                    lwr=lwr,
+                    spi=spi,
+                    map=map,
+                    mat=mat,
+                    ratio=ratio)
+  ## remove lines for which all response variables are missing
+  ## if sla is missing, all response variables are
+  ##
+  tmp <- subset(tmp, !is.na(sla), drop=TRUE)
+  ## pull out lines with all response variables present
+  ## if sd is there, all response variables are
+  ##
+  complete <- subset(tmp, !is.na(sd), drop=TRUE)
+  ## pull out lines with sd and spi missing
+  ## if sd is missing, so is spi
+  ##
+  incomplete <- subset(tmp, is.na(sd), drop=FALSE)
+} else {
+  species <- as.numeric(combined$species)
+  sla <- standardize(combined$SLA)
+  area <- standardize(combined$Leaf_area)
+  sd <- standardize(combined$SD)
+  lwr <- standardize(combined$Lwratio)
+  spi <- standardize(combined$SPI)
+  map <- standardize(combined$MAP)
+  mat <- standardize(combined$MAT)
+  ratio <- standardize(combined$ratio)
+  n.samp <- nrow(combined)
+}
 
-n.samp <- nrow(combined)
 n.species <- max(species, na.rm=TRUE)
 n.dim <- 5
 n.species.dim <- n.species*n.dim
@@ -221,7 +259,7 @@ if (plot) {
   for (i in 1:5) {
     x.plot <- mu.mean[,i]
     y.plot <- y[,i]-mu.mean[,i]
-    plot(x.plot, y.plot, xlab="Observed", ylab="Residual",
+    plot(x.plot, y.plot, xlab="Predicted", ylab="Residual",
          pch=16, cex=0.75,
          main=c("LMA", "Area", "LWR", "SPI", "SD")[i])
   }
@@ -231,6 +269,6 @@ if (plot) {
 filename <- paste("results-",
                   gsub(":", "-",
                        gsub(" ", "-", Sys.time())),
-                  ".txt",
+                  ".Rsave",
                   sep="")
 save(fit, file=filename)

@@ -1,3 +1,8 @@
 ## Miscellaneous files to ignore
 ##
 *~
+
+## R-related files that shouldn’t be synced
+##
+.Rhistory
+*.Rsave
