@@ -7,7 +7,7 @@ debug <- FALSE
 plot <- TRUE
 print <- TRUE
 report.DIC <- TRUE
-full.data <- FALSE
+full.data <- TRUE
 
 gamma.rate.resid <- 1.0
 gamma.shape.resid <- 1.0
@@ -16,7 +16,11 @@ gamma.shape.species <-  1.0
 beta.par <- 6
 max.r <- 0.4
 
-model.file="traits-environment.txt"
+if (full.data) {
+  model.file="traits-environment-full.txt"
+} else {
+  model.file="traits-environment.txt"
+}
 
 if (debug) {
   n.chains <- 1
@@ -123,6 +127,28 @@ if (full.data) {
   ## if sd is missing, so is spi
   ##
   incomplete <- subset(tmp, is.na(sd), drop=FALSE)
+  ## re-extract vectors for JAGS
+  ##
+  species <- complete$species
+  sla <- complete$sla
+  area <- complete$area
+  sd <- complete$sd
+  lwr <- complete$lwr
+  spi <- complete$spi
+  map <- complete$map
+  mat <- complete$mat
+  ratio <- complete$ratio
+  n.samp <- nrow(complete)
+  ##
+  species.inc <- incomplete$species
+  sla.inc <- incomplete$sla
+  area.inc <- incomplete$area
+  lwr.inc <- incomplete$lwr
+  map.inc <- incomplete$map
+  mat.inc <- incomplete$mat
+  ratio.inc <- incomplete$ratio
+  n.samp.inc <- nrow(incomplete)
+  n.dim.inc <- 3
 } else {
   species <- as.numeric(combined$species)
   sla <- standardize(combined$SLA)
@@ -151,39 +177,60 @@ y <- as.matrix(data.frame(sla,
                           sd,
                           lwr,
                           spi))
-
-## parameters for Wishart prior
-##
-## nrow = ncol = # of parameters, i.e., ncol(y) == 5
-## nu <- nrow + 2 makes it as vague as possible
-## Note: nu > nrow + 1 required for distribution to be
-##       non-degenerate
-##
-Omega <- diag(x=1.0, nrow=ncol(y), ncol=ncol(y))
-nu <- nrow(Omega) + 2
+if (full.data) {
+  z <- as.matrix(data.frame(sla.inc,
+                            area.inc,
+                            lwr.inc))
+}
 
 ## prior precision on regression coefficients
 ##
 tau <- 0.1
 
-
-jags.data <- c("species",
-               "y",
-               "map",
-               "mat",
-               "ratio",
-               "n.samp",
-               "n.species",
-               "n.dim",
-               "n.species.dim",
-               "Ginv",
-               "tau",
-               "gamma.rate.resid",
-               "gamma.shape.resid",
-               "gamma.rate.species",
-               "gamma.shape.species",
-               "beta.par",
-               "max.r")
+if (full.data) {
+  jags.data <- c("species",
+                 "species.inc",
+                 "y",
+                 "z",
+                 "map",
+                 "mat",
+                 "ratio",
+                 "map.inc",
+                 "mat.inc",
+                 "ratio.inc",
+                 "n.samp",
+                 "n.samp.inc",
+                 "n.species",
+                 "n.dim",
+                 "n.dim.inc",
+                 "n.species.dim",
+                 "Ginv",
+                 "tau",
+                 "gamma.rate.resid",
+                 "gamma.shape.resid",
+                 "gamma.rate.species",
+                 "gamma.shape.species",
+                 "beta.par",
+                 "max.r")
+} else {
+  jags.data <- c("species",
+                 "y",
+                 "map",
+                 "mat",
+                 "ratio",
+                 "n.samp",
+                 "n.species",
+                 "n.dim",
+                 "n.species.dim",
+                 "Ginv",
+                 "tau",
+                 "gamma.rate.resid",
+                 "gamma.shape.resid",
+                 "gamma.rate.species",
+                 "gamma.shape.species",
+                 "beta.par",
+                 "max.r")
+}
 jags.par <- c("beta.map",
                "beta.mat",
                "beta.ratio",

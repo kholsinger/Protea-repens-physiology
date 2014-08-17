@@ -1,0 +1,140 @@
+model {
+  for (i in 1:n.samp) {
+    ## multivariate response vector
+    ##
+    y[i,1:n.dim] ~ dmnorm(mu[i,1:n.dim], phi.resid[1:n.dim,1:n.dim])
+
+    ## different coefficients for each response: (j in 1:n.dim)
+    ## species random effect in intercept: beta.0[species[i],j]
+    ##
+    for (j in 1:n.dim) {
+      mu[i,j] <- beta.0[species[i],j]
+                 + beta.map[j]*map[i]
+		 + beta.mat[j]*mat[i]
+                 + beta.ratio[j]*ratio[i]
+    }
+  }
+
+  ## regression for incomplete responses
+  ##
+  ## regression coefficients and covariance matrix shared with full
+  ## data simply by subsetting from a shared mean vector and a
+  ## shared covariance matrix
+  ##
+  for (i in 1:n.samp.inc) {
+    ## multivariate response vector
+    ##
+    z[i,1:n.dim.inc] ~ dmnorm(mu[i+n.samp,1:n.dim.inc], phi.resid[1:n.dim.inc,1:n.dim.inc])
+
+    ## different coefficients for each response: (j in 1:n.dim.inc)
+    ## species random effect in intercept: beta.0[species[i],j]
+    ##
+    for (j in 1:n.dim.inc) {
+      mu[i+n.samp,j] <- beta.0[species.inc[i],j]
+                        + beta.map[j]*map.inc[i]
+                        + beta.mat[j]*mat.inc[i]
+                        + beta.ratio[j]*ratio.inc[i]
+    }
+  }
+
+  ## priors on beta's
+  ##
+  for (j in 1:n.dim) {
+    beta.map[j] ~ dnorm(0.0, tau)
+    beta.mat[j] ~ dnorm(0.0, tau)
+    beta.ratio[j] ~ dnorm(0.0, tau)
+  }
+
+  ## mvnorm prior on species random effects
+  ##
+  ## using indepent priors on each trait for now
+  ##
+  Phi[1:n.species.dim] ~ dmnorm(mu.0, phi.species.full[1:n.species.dim,1:n.species.dim])
+  for (j in 1:n.species.dim) {
+    mu.0[j] <- 0.0
+  }
+  ## translate mvnorm to subvectors for beta.0
+  ##
+  for (k in 1:n.species) {
+    for (j in 1:n.dim) {
+      beta.0[k,j] <- Phi[(k-1)*n.dim+j]
+    }
+  }
+
+  ## prior on inverse of covariance matrix
+  ##
+  ## start with independent gamma priors on each standard
+  ## deviation
+  ##
+  for (i in 1:n.dim) {
+    sd.resid[i] ~ dgamma(gamma.shape.resid, gamma.rate.resid)
+  }
+  ## then build correlation matrix with off-diagaonal elements
+  ## independent symmetric beta priors
+  ##
+  for (i in 1:(n.dim-1)) {
+    rho.resid[i,i] <- 1.0
+    for (j in (i+1):n.dim) {
+      gamma.resid[i,j] ~ dbeta(beta.par, beta.par)
+      rho.resid[i,j] <- max.r*(2.0*gamma.resid[i,j] - 1.0)
+      rho.resid[j,i] <- rho.resid[i,j]
+    }
+  }
+  rho.resid[n.dim,n.dim] <- 1.0
+  ## then calculate covariance matrix
+  ##
+  for (i in 1:(n.dim-1)) {
+    Sigma.resid[i,i] <- sd.resid[i]*sd.resid[i]
+    for (j in (i+1):n.dim) {
+      Sigma.resid[i,j] <- rho.resid[i,j]*sd.resid[i]*sd.resid[j]
+      Sigma.resid[j,i] <- Sigma.resid[i,j]
+    }
+  }
+  Sigma.resid[n.dim,n.dim] <- sd.resid[n.dim]*sd.resid[n.dim]
+  phi.resid[1:n.dim,1:n.dim] <- inverse(Sigma.resid[1:n.dim,1:n.dim])
+
+  ## treating species effects as independent of one another, i.e.,
+  ## ignoring population relatedness and assuming star phylogeny
+  ##
+  for (i in 1:n.species) {
+    for (j in 1:n.species) {
+      for (k in 1:n.dim) {
+        for (l in 1:n.dim) {
+          phi.species.full[(i-1)*n.dim+k, (j-1)*n.dim+l] <- Ginv[i,j]*phi.species[k,l]
+        }
+      }
+    }
+  }
+
+  ## prior on trait component of species random effect
+  ##
+  ## start with independent gamma priors on each standard
+  ## deviation
+  ##
+  for (i in 1:n.dim) {
+    sd.species[i] ~ dgamma(gamma.shape.species, gamma.rate.species)
+  }
+  ## then build correlation matrix with off-diagaonal elements
+  ## independent symmetric beta priors
+  ##
+  for (i in 1:(n.dim-1)) {
+    rho.species[i,i] <- 1.0
+    for (j in (i+1):n.dim) {
+      gamma.species[i,j] ~ dbeta(beta.par, beta.par)
+      rho.species[i,j] <- max.r*(2.0*gamma.species[i,j] - 1.0)
+      rho.species[j,i] <- rho.species[i,j]
+    }
+  }
+  rho.species[n.dim,n.dim] <- 1.0
+  ## then calculate covariance matrix
+  ##
+  for (i in 1:(n.dim-1)) {
+    Sigma.species[i,i] <- sd.species[i]*sd.species[i]
+    for (j in (i+1):n.dim) {
+      Sigma.species[i,j] <- rho.species[i,j]*sd.species[i]*sd.species[j]
+      Sigma.species[j,i] <- Sigma.species[i,j]
+    }
+  }
+  Sigma.species[n.dim,n.dim] <- sd.species[n.dim]*sd.species[n.dim]
+  phi.species[1:n.dim,1:n.dim] <- inverse(Sigma.species[1:n.dim,1:n.dim])
+}
