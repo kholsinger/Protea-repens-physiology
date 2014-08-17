@@ -13,8 +13,8 @@ gamma.rate.resid <- 1.0
 gamma.shape.resid <- 1.0
 gamma.rate.species <- 1.0
 gamma.shape.species <-  1.0
-beta.par <- 32
-max.r <- 1.0
+beta.par <- 6
+max.r <- 0.4
 
 model.file="traits-environment.txt"
 
@@ -140,6 +140,10 @@ n.species <- max(species, na.rm=TRUE)
 n.dim <- 5
 n.species.dim <- n.species*n.dim
 
+## structured random effect matrix to reflect co-ancestry of species
+##
+Ginv <- diag(x=1.0, nrow=n.species, ncol=n.species)
+
 ## construct response matrix
 ##
 y <- as.matrix(data.frame(sla,
@@ -172,6 +176,7 @@ jags.data <- c("species",
                "n.species",
                "n.dim",
                "n.species.dim",
+               "Ginv",
                "tau",
                "gamma.rate.resid",
                "gamma.shape.resid",

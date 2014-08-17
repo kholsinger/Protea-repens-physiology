@@ -76,10 +76,6 @@ model {
   ##
   for (i in 1:n.species) {
     for (j in 1:n.species) {
-      ## Ginv[i,i] = 1
-      ## Ginv[i,j] = 0 for i <> j
-      ##
-      Ginv[i,j] <- equals(i,j)
       for (k in 1:n.dim) {
         for (l in 1:n.dim) {
           phi.species.full[(i-1)*n.dim+k, (j-1)*n.dim+l] <- Ginv[i,j]*phi.species[k,l]
