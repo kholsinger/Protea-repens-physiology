@@ -7,12 +7,48 @@ model {
     ## different coefficients for each response: (j in 1:n.dim)
     ## species random effect in intercept: beta.0[species[i],j]
     ##
+    ## Note: year[1] is baseline for year effect.
+    ## year[i]-1 causes yr[j] to be estimate of year 2 effect relative
+    ## to year 1
+    ##
     for (j in 1:n.dim) {
       mu[i,j] <- beta.0[species[i],j]
                  + beta.map[j]*map[i]
-		 + beta.mat[j]*mat[i]
+                 + beta.mat[j]*mat[i]
                  + beta.ratio[j]*ratio[i]
+                 + yr[j]*(year[i]-1)
     }
+  }
+
+  ## regression for incomplete responses
+  ##
+  ## regression coefficients and covariance matrix shared with full
+  ## data simply by subsetting from a shared mean vector and a
+  ## shared covariance matrix
+  ##
+  for (i in 1:n.samp.inc) {
+    ## multivariate response vector
+    ##
+    z[i,1:n.dim.inc] ~ dmnorm(mu[i+n.samp,1:n.dim.inc], phi.resid[1:n.dim.inc,1:n.dim.inc])
+
+    ## different coefficients for each response: (j in 1:n.dim.inc)
+    ## species random effect in intercept: beta.0[species[i],j]
+    ##
+    for (j in 1:n.dim.inc) {
+      mu[i+n.samp,j] <- beta.0[species.inc[i],j]
+                        + beta.map[j]*map.inc[i]
+                        + beta.mat[j]*mat.inc[i]
+                        + beta.ratio[j]*ratio.inc[i]
+                        + yr[j]*(year.inc[i]-1)
+    }
+  }
+
+  ## year effect: only 2 years in data, not reasonable to estimate
+  ## covariance, use vague independent normals instead and set year 1
+  ## as baseline
+  ##
+  for (j in 1:n.dim) {
+    yr[j] ~ dnorm(0.0, tau)
   }
 
   ## priors on beta's
@@ -27,9 +63,9 @@ model {
   ##
   ## using indepent priors on each trait for now
   ##
-  Phi[1:n.species.dim] ~ dmnorm(mu.0, phi.species.full[1:n.species.dim,1:n.species.dim])
+  Phi[1:n.species.dim] ~ dmnorm(mu.species.0, phi.species.full[1:n.species.dim,1:n.species.dim])
   for (j in 1:n.species.dim) {
-    mu.0[j] <- 0.0
+    mu.species.0[j] <- 0.0
   }
   ## translate mvnorm to subvectors for beta.0
   ##

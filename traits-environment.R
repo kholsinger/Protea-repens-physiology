@@ -4,23 +4,19 @@ require(mvtnorm)
 rm(list=ls())
 
 debug <- FALSE
-plot <- TRUE
-print <- TRUE
-report.DIC <- TRUE
-full.data <- TRUE
-
+## prior parameters for covariance matrix
+##
 gamma.rate.resid <- 1.0
 gamma.shape.resid <- 1.0
 gamma.rate.species <- 1.0
 gamma.shape.species <-  1.0
 beta.par <- 6
 max.r <- 0.4
+## prior precision on regression coefficients and year effect
+##
+tau <- 0.1
 
-if (full.data) {
-  model.file="traits-environment-full.txt"
-} else {
-  model.file="traits-environment.txt"
-}
+model.file="traits-environment.txt"
 
 if (debug) {
   n.chains <- 1
@@ -46,124 +42,85 @@ standardize <- function(x) {
   y
 }
 
-get.mean.vector <- function(x) {
-  x.mean <- apply(x, 1, mean, na.rm=TRUE)
-}
-
-drop.levels <- function(dat) {
-  dat[] <- lapply(dat, function(x) x[,drop=TRUE])
-  return(dat)
-}
-
-likelihood <- function(y, mu, Sigma) {
-  llike <- 0.0
-  for (i in 1:nrow(y)) {
-    llike <- llike + dmvnorm(y[i,], mu[i,], Sigma[,], log=TRUE)
-  }
-  llike
-}
-
-Dbar <- function(y, mu, Sigma) {
-  dbar <- numeric(0)
-  n.rep <- dim(mu)[1]
-  for (i in 1:n.rep) {
-    if ((i %% 10) == 0) {
-      cat(".", sep="")
-      flush.console()
-    }
-    if ((i %% 500) == 0) {
-      cat(i, "\n")
-      flush.console()
-    }
-    dbar[i] <- -2.0*likelihood(y, mu[i,,], Sigma[i,,])
-  }
-  mean(dbar)
-}
-
-Dhat <- function(y, mu.mean, Sigma.mean) {
-  -2.0*likelihood(y, mu.mean, Sigma.mean)
-}
-
-## read in appropriate data set
-##
-if (full.data) {
-  combined <- read.csv("traits-environment.csv", na.strings=".", header=TRUE)
-} else {
-  combined <- read.csv("combined.csv", na.strings=".", header=TRUE)
-}
+combined <- read.csv("traits-environment.csv", na.strings=".", header=TRUE)
 
 ## prepare the data for JAGS
 ##
-if (full.data) {
-  species <- as.numeric(combined$source_pop)
-  sla <- standardize(combined$SLA)
-  area <- standardize(combined$leaf_area)
-  sd <- standardize(combined$stomatal_density)
-  lwr <- standardize(combined$LWR)
-  spi <- standardize(combined$SPI)
-  map <- standardize(combined$MAP)
-  mat <- standardize(combined$MAT)
-  ratio <- standardize(combined$rain_DecJanFeb)
-  ## set up temporary data frame for cleaning and manipulation
-  ##
-  tmp <- data.frame(species=species,
-                    sla=sla,
-                    area=area,
-                    sd=sd,
-                    lwr=lwr,
-                    spi=spi,
-                    map=map,
-                    mat=mat,
-                    ratio=ratio)
-  ## remove lines for which all response variables are missing
-  ## if sla is missing, all response variables are
-  ##
-  tmp <- subset(tmp, !is.na(sla), drop=TRUE)
-  ## pull out lines with all response variables present
-  ## if sd is there, all response variables are
-  ##
-  complete <- subset(tmp, !is.na(sd), drop=TRUE)
-  ## pull out lines with sd and spi missing
-  ## if sd is missing, so is spi
-  ##
-  incomplete <- subset(tmp, is.na(sd), drop=FALSE)
-  ## re-extract vectors for JAGS
-  ##
-  species <- complete$species
-  sla <- complete$sla
-  area <- complete$area
-  sd <- complete$sd
-  lwr <- complete$lwr
-  spi <- complete$spi
-  map <- complete$map
-  mat <- complete$mat
-  ratio <- complete$ratio
-  n.samp <- nrow(complete)
-  ##
-  species.inc <- incomplete$species
-  sla.inc <- incomplete$sla
-  area.inc <- incomplete$area
-  lwr.inc <- incomplete$lwr
-  map.inc <- incomplete$map
-  mat.inc <- incomplete$mat
-  ratio.inc <- incomplete$ratio
-  n.samp.inc <- nrow(incomplete)
-  n.dim.inc <- 3
-} else {
-  species <- as.numeric(combined$species)
-  sla <- standardize(combined$SLA)
-  area <- standardize(combined$Leaf_area)
-  sd <- standardize(combined$SD)
-  lwr <- standardize(combined$Lwratio)
-  spi <- standardize(combined$SPI)
-  map <- standardize(combined$MAP)
-  mat <- standardize(combined$MAT)
-  ratio <- standardize(combined$ratio)
-  n.samp <- nrow(combined)
-}
+species <- as.numeric(combined$source_pop)
+sla <- standardize(combined$SLA)
+area <- standardize(combined$leaf_area)
+sd <- standardize(combined$stomatal_density)
+lwr <- standardize(combined$LWR)
+spi <- standardize(combined$SPI)
+map <- standardize(combined$MAP)
+mat <- standardize(combined$MAT)
+ratio <- standardize(combined$rain_DecJanFeb)
+## year read in as integer: convert to factor and back to numeric
+## to make it (1,2) instead of (2013,2014)
+##
+year <- as.numeric(as.factor(combined$year))
+
+## IMPORTANT NOTE: As currently written this code assumes that the columns with
+## missing response data come immediately after those without missing data.
+## So SLA, AREA, and LWR must precede SD and SPI
+##
+## set up temporary data frame for cleaning and manipulation
+##
+tmp <- data.frame(species=species,
+                  sla=sla,
+                  area=area,
+                  lwr=lwr,
+                  sd=sd,
+                  spi=spi,
+                  map=map,
+                  mat=mat,
+                  ratio=ratio,
+                  year=year)
+## remove lines for which all response variables are missing
+## if sla is missing, all response variables are
+##
+tmp <- subset(tmp, !is.na(sla), drop=TRUE)
+
+## pull out remaining lines with all response variables present
+## if sd is there, all response variables are
+##
+complete <- subset(tmp, !is.na(sd), drop=TRUE)
+
+## pull out remaining lines with sd and spi missing
+## if sd is missing, so is spi
+##
+incomplete <- subset(tmp, is.na(sd), drop=FALSE)
+
+## re-extract vectors for JAGS
+##
+## complete data
+##
+species <- complete$species
+sla <- complete$sla
+area <- complete$area
+sd <- complete$sd
+lwr <- complete$lwr
+spi <- complete$spi
+map <- complete$map
+mat <- complete$mat
+ratio <- complete$ratio
+year <- complete$year
+n.samp <- nrow(complete)
+## missing sd and spi
+##
+species.inc <- incomplete$species
+sla.inc <- incomplete$sla
+area.inc <- incomplete$area
+lwr.inc <- incomplete$lwr
+map.inc <- incomplete$map
+mat.inc <- incomplete$mat
+ratio.inc <- incomplete$ratio
+year.inc <- incomplete$year
+n.samp.inc <- nrow(incomplete)
 
 n.species <- max(species, na.rm=TRUE)
 n.dim <- 5
+n.dim.inc <- 3
 n.species.dim <- n.species*n.dim
 
 ## structured random effect matrix to reflect co-ancestry of species
@@ -177,68 +134,44 @@ y <- as.matrix(data.frame(sla,
                           sd,
                           lwr,
                           spi))
-if (full.data) {
-  z <- as.matrix(data.frame(sla.inc,
-                            area.inc,
-                            lwr.inc))
-}
+z <- as.matrix(data.frame(sla.inc,
+                          area.inc,
+                          lwr.inc))
 
-## prior precision on regression coefficients
-##
-tau <- 0.1
-
-if (full.data) {
-  jags.data <- c("species",
-                 "species.inc",
-                 "y",
-                 "z",
-                 "map",
-                 "mat",
-                 "ratio",
-                 "map.inc",
-                 "mat.inc",
-                 "ratio.inc",
-                 "n.samp",
-                 "n.samp.inc",
-                 "n.species",
-                 "n.dim",
-                 "n.dim.inc",
-                 "n.species.dim",
-                 "Ginv",
-                 "tau",
-                 "gamma.rate.resid",
-                 "gamma.shape.resid",
-                 "gamma.rate.species",
-                 "gamma.shape.species",
-                 "beta.par",
-                 "max.r")
-} else {
-  jags.data <- c("species",
-                 "y",
-                 "map",
-                 "mat",
-                 "ratio",
-                 "n.samp",
-                 "n.species",
-                 "n.dim",
-                 "n.species.dim",
-                 "Ginv",
-                 "tau",
-                 "gamma.rate.resid",
-                 "gamma.shape.resid",
-                 "gamma.rate.species",
-                 "gamma.shape.species",
-                 "beta.par",
-                 "max.r")
-}
+jags.data <- c("species",
+               "species.inc",
+               "y",
+               "z",
+               "map",
+               "mat",
+               "ratio",
+               "year",
+               "map.inc",
+               "mat.inc",
+               "ratio.inc",
+               "year.inc",
+               "n.samp",
+               "n.samp.inc",
+               "n.species",
+               "n.dim",
+               "n.dim.inc",
+               "n.species.dim",
+               "Ginv",
+               "tau",
+               "gamma.rate.resid",
+               "gamma.shape.resid",
+               "gamma.rate.species",
+               "gamma.shape.species",
+               "beta.par",
+               "max.r")
 jags.par <- c("beta.map",
-               "beta.mat",
-               "beta.ratio",
-               "mu",
-               "rho.resid",
-               "Sigma.resid",
-               "rho.species",
-               "Sigma.species")
+              "beta.mat",
+              "beta.ratio",
+              "rho.resid",
+              "Sigma.resid",
+              "rho.species",
+              "Sigma.species",
+              "yr")
 
 fit <- jags(data=jags.data,
             inits=NULL,
@@ -251,72 +184,24 @@ fit <- jags(data=jags.data,
             DIC=TRUE,
             working.directory=".")
 
-mu.mean <- fit$BUGSoutput$mean$mu
-Sigma.mean <- fit$BUGSoutput$mean$Sigma.resid
-mu <- fit$BUGSoutput$sims.list$mu
-Sigma <- fit$BUGSoutput$sims.list$Sigma.resid
-summary<-fit$BUGSoutput$summary
-
-if (print) {
-  opt.old <- options(width=120)
-  filename <- paste("results-",
-                    gsub(":", "-",
-                         gsub(" ", "-", Sys.time())),
-                    ".txt",
-                    sep="")
-  if (!debug) {
-    sink(filename, split=TRUE)
-  }
-
-  cat("beta.par:            ", beta.par, "\n")
-  cat("max.r:               ", max.r, "\n\n")
-  print(fit, digits.summary=3)
-  if (!debug) {
-    sink()
-  }
-  if (report.DIC) {
-    dbar <- Dbar(y, mu, Sigma)
-    dhat <- Dhat(y, mu.mean, Sigma.mean)
-    pD <- dbar - dhat
-    DIC <- dbar + pD
-    if (!debug) {
-      sink(filename, append=TRUE, split=TRUE)
-    }
-    cat("\n",
-        "Dbar: ", dbar, "\n",
-        "Dhat: ", dhat, "\n",
-        "pD:   ", pD, "\n",
-        "DIC:  ", DIC, "\n")
-    if (!debug) {
-      sink()
-    }
-  }
-  options(opt.old)
+## print the results
+##
+opt.old <- options(width=120)
+filename <- paste("results-",
+                  gsub(":", "-",
+                       gsub(" ", "-", Sys.time())),
+                  ".txt",
+                  sep="")
+if (!debug) {
+  sink(filename, split=TRUE)
 }
-
-
-if (plot) {
-  dev.new()
-  old.par <- par(mfrow=c(2,3))
-  for (i in 1:5) {
-    x.plot <- y[,i]
-    y.plot <- mu.mean[,i]
-    plot(x.plot, y.plot, xlab="Observed", ylab="Predicted",
-         pch=16, cex=0.75,
-         main=c("LMA", "Area", "LWR", "SPI", "SD")[i])
-  }
-  par(old.par)
-  dev.new()
-  old.par <- par(mfrow=c(2,3))
-  for (i in 1:5) {
-    x.plot <- mu.mean[,i]
-    y.plot <- y[,i]-mu.mean[,i]
-    plot(x.plot, y.plot, xlab="Predicted", ylab="Residual",
-         pch=16, cex=0.75,
-         main=c("LMA", "Area", "LWR", "SPI", "SD")[i])
-  }
-  par(old.par)
+cat("beta.par:            ", beta.par, "\n")
+cat("max.r:               ", max.r, "\n\n")
+print(fit, digits.summary=3)
+if (!debug) {
+  sink()
 }
+options(opt.old)
 
 filename <- paste("results-",
                   gsub(":", "-",

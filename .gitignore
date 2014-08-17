@@ -1,6 +1,7 @@
 ## Miscellaneous files to ignore
 ##
 *~
+*.pdf
 
 ## R-related files that shouldn’t be synced
 ##
