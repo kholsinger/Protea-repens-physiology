@@ -47,8 +47,13 @@ model {
   ## covariance, use vague independent normals instead and set year 1
   ## as baseline
   ##
-  for (j in 1:n.dim) {
+  ## only one year of data for last two dimensions
+  ##
+  for (j in 1:3) {
     yr[j] ~ dnorm(0.0, tau)
+  }
+  for (j in 4:5) {
+    yr[j] <- 0.0
   }
 
   ## priors on beta's

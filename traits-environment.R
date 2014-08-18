@@ -60,10 +60,6 @@ ratio <- standardize(combined$rain_DecJanFeb)
 ##
 year <- as.numeric(as.factor(combined$year))
 
-## IMPORTANT NOTE: As currently written this code assumes that the columns with
-## missing response data come immediately after those without missing data.
-## So SLA, AREA, and LWR must precede SD and SPI
-##
 ## set up temporary data frame for cleaning and manipulation
 ##
 tmp <- data.frame(species=species,
@@ -129,10 +125,14 @@ Ginv <- diag(x=1.0, nrow=n.species, ncol=n.species)
 
 ## construct response matrix
 ##
+## IMPORTANT NOTE: As currently written this code assumes that the columns with
+## missing response data come immediately after those without missing data.
+## So SLA, AREA, and LWR must precede SD and SPI
+##
 y <- as.matrix(data.frame(sla,
                           area,
-                          sd,
                           lwr,
+                          sd,
                           spi))
 z <- as.matrix(data.frame(sla.inc,
                           area.inc,

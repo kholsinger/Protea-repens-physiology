@@ -1,3 +1,11 @@
+## the order of response variables
+##
+y <- as.matrix(data.frame(sla,
+                          area,
+                          sd,
+                          lwr,
+                          spi))
+
 beta.par:             6
 max.r:                0.4
 
