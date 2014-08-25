@@ -113,7 +113,10 @@ fit <- function(dat, label) {
                 "beta.photo.fluor",
                 "beta.photo.trans",
                 "beta.photo.humid",
-                "beta.photo.temp")
+                "beta.photo.temp",
+                "mu.lf",
+                "mu.ph",
+                "mu.photo")
 
   dat.fit <- jags(data=jags.data,
                   inits=NULL,
@@ -172,11 +175,13 @@ kleinm$plant <- as.numeric(as.factor(kleinm$plant))
 dehoop.fit <- fit(dehoop, "Path analysis results at De Hoop")
 kleinm.fit <- fit(kleinm, "Path analysis results at Kleinmond")
 
-if(0) {
 filename <- paste("results-path-",
                   gsub(":", "-",
                        gsub(" ", "-", Sys.time())),
                   ".Rsave",
                   sep="")
-save(dehoop.fit, kleinm.fit, file=filename)
-}
+save(dehoop,
+     dehoop.fit,
+     kleinm,
+     kleinm.fit,
+     file=filename)
