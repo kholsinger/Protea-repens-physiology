@@ -2,6 +2,7 @@
 ##
 *~
 *.pdf
+*.xlsx
 
 ## R-related files that shouldn’t be synced
 ##
