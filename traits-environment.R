@@ -10,8 +10,8 @@ gamma.rate.resid <- 1.0
 gamma.shape.resid <- 1.0
 gamma.rate.species <- 1.0
 gamma.shape.species <-  1.0
-beta.par <- 6
-max.r <- 0.4
+beta.par <- 10
+max.r <- 0.6
 ## prior precision on regression coefficients and year effect
 ##
 tau <- 0.1
@@ -203,9 +203,11 @@ if (!debug) {
 }
 options(opt.old)
 
-filename <- paste("results-",
-                  gsub(":", "-",
-                       gsub(" ", "-", Sys.time())),
-                  ".Rsave",
-                  sep="")
-save(fit, file=filename)
+if (!debug) {
+  filename <- paste("results-",
+                    gsub(":", "-",
+                         gsub(" ", "-", Sys.time())),
+                    ".Rsave",
+                    sep="")
+  save(fit, file=filename)
+}
