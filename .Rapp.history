@@ -300,571 +300,67 @@ qbeta(0.95, alpha, beta)
 2*3*10
 80*25
 install.packages("mvtnorm")
-require(R2jags)#
-require(mvtnorm)#
-rm(list=ls())#
-debug <- FALSE#
-plot <- TRUE#
-print <- TRUE#
-report.DIC <- TRUE#
-gamma.rate.resid <- 1.0#
-gamma.shape.resid <- 1.0#
-gamma.rate.species <- 1.0#
-gamma.shape.species <-  1.0#
-beta.par <- 6#
-max.r <- 0.5#
-model.file="traits-environment.txt"#
-if (debug) {#
-  n.chains <- 1#
-  n.burnin <- 500#
-  n.iter <- 1000#
-  n.thin <- 1#
-  ## to allow replication of results across runs in JAGS#
-  ###
-  set.seed(1)#
-} else {#
-  n.chains <- 5#
-  n.burnin <- 5000#
-  n.iter <- 25000#
-  n.thin <- 25#
-}#
-standardize <- function(x) {#
-  if (is.numeric(x)) {#
-    y <- (x - mean(x, na.rm=TRUE))/sd(x, na.rm=TRUE)#
-  } else {#
-    y <- x#
-  }#
-  y#
-}#
-get.mean.vector <- function(x) {#
-  x.mean <- apply(x, 1, mean, na.rm=TRUE)#
-}#
-drop.levels <- function(dat) {#
-  dat[] <- lapply(dat, function(x) x[,drop=TRUE])#
-  return(dat)#
-}#
-likelihood <- function(y, mu, Sigma) {#
-  llike <- 0.0#
-  for (i in 1:nrow(y)) {#
-    llike <- llike + dmvnorm(y[i,], mu[i,], Sigma[,], log=TRUE)#
-  }#
-  llike#
-}#
-Dbar <- function(y, mu, Sigma) {#
-  dbar <- numeric(0)#
-  n.rep <- dim(mu)[1]#
-  for (i in 1:n.rep) {#
-    if ((i %% 10) == 0) {#
-      cat(".", sep="")#
-      flush.console()#
-    }#
-    if ((i %% 500) == 0) {#
-      cat(i, "\n")#
-      flush.console()#
-    }#
-    dbar[i] <- -2.0*likelihood(y, mu[i,,], Sigma[i,,])#
-  }#
-  mean(dbar)#
-}#
-Dhat <- function(y, mu.mean, Sigma.mean) {#
-  -2.0*likelihood(y, mu.mean, Sigma.mean)#
-}#
-## read in appropriate data set#
-###
-combined <- read.csv("combined.csv", na.strings=".", header=TRUE)#
-## prepare the data for JAGS#
-###
-## 1. pull the relevant data into columns#
-###
-species <- combined$species#
-species#
-head(combined)#
-sla <- combined$SLA#
-area <- combined$Leaf_area#
-sd <- combined$SD#
-lwr <- combined$LWratio#
-spi <- combined$SPI#
-map <- combined$MAP#
-mat <- combined$MAT#
-ratio <- combined$ratio#
-## 3. pull the vectors back out and standardize for JAGS#
-###
-species <- as.numeric(combined$species)#
-sla <- standardize(combined$SLA)#
-area <- standardize(combined$Leaf_area)#
-sd <- standardize(combined$SD)#
-lwr <- standardize(combined$Lwratio)#
-spi <- standardize(combined$SPI)#
-map <- standardize(combined$MAP)#
-mat <- standardize(combined$MAT)#
-ratio <- standardize(combined$ratio)#
-n.samp <- nrow(combined)#
-n.species <- max(species)#
-n.dim <- 5#
-n.species.dim <- n.species*n.dim
-require(lme4)
-install.packages("lme4")
-require(lme4)
-sla.lmer <- lmer(sla ~ map + mat + ratio + (1|species))
-summary(sla.lmer)
-help(lmer)
-methods(class="merMod")
-plot(sla.lmer)
-residuals(sla.lmer)
-methods(class="merMod")
-resid <- sla - fitted(sla.lmer)
-plot(sla, resid)
-resid - residual(sla.lmer)
-resid - residuals(sla.lmer)
-plot(sla, residuals(sla.lmer))
-plot(fitted(sla.lmer), residuals(sla.lmer))
-plot(sla.lmer)
-plot(sla, fitted(sla.lmer))
+x <- seq(0, 1, by=0.001)
+y <- dbeta(x, 6, 6)
+plot(x, y, typ="l")
+y <- 2*dbeta(x, 6, 6)-1
+plot(x, y, typ="l")
+y
+plot(x, y, typ="l")
+x <- seq(-1, 1, by=0.001)
+y <- dbeta((x+1)/2, 6, 6)
+plot(x, y, typ="l")
+y <- dbeta((x+1)/2, 8, 8)
+plot(x, y, typ="l")
+y <- dbeta((x+1)/2, 16, 16)
+plot(x, y, typ="l")
+y <- dbeta((x+1)/2, 32, 32)
+plot(x, y, typ="l")
+pbeta((-0.4+1)/2)
+pbeta((-0.4+1)/2, 32, 32)
+pbeta(0.5, 32, 32)
+pbeta((0.4+1)/1, 32, 32)
+1-pbeta((0.4+1)/1, 32, 32)
+1-pbeta((0.4+1)/2, 32, 32)
+pbeta((0.4+1)/2, 32, 32)
+require(R2jags)
+help(jags)
+6600/30000
+library(plyr)
+help(plyr)
+library(reshape2)
+help(reshape2)
+help(melt)
+a <- array(c(1:23, NA), c(2,3,4))#
+melt(a)
+a
+a <- array(c(1:23, NA), c(2,3,4))#
+melt(a)
+str(a)
+library(mclust)
+install.packages("mclust")
+help(mclust)
+??mclust
+0.9^20
+0.05^(1/20)
+1-0.05^(1/20)
+1-0.05^(1/40)
+Sys.setenv(MAKEFLAGS="-j4")
+source("http://mc-stan.org/rstan/install.R", echo=TRUE, max.deparse.length=2000)
+install.rstan()
+install_rstan()
+help("CPPFLAGS")
+??("CPPFLAGS")
+help(CPPFLAGS)
+??(CPPFLAGS)
+R.home("etc")
+install_rstan()
+install.packages("Rcpp")
+install_rstan()
+help(install.packages)
+remove.packages("Rcpp")
+install_rstan()
+1-(1-0.041)*(1-0.064)
 source("traits-environment.R")
-help(max)
 source("traits-environment.R")
-species
 source("traits-environment.R")
-species
-require(R2jags)#
-require(mvtnorm)#
-rm(list=ls())#
-debug <- FALSE#
-plot <- TRUE#
-print <- TRUE#
-report.DIC <- TRUE#
-gamma.rate.resid <- 1.0#
-gamma.shape.resid <- 1.0#
-gamma.rate.species <- 1.0#
-gamma.shape.species <-  1.0#
-beta.par <- 6#
-max.r <- 0.5#
-model.file="traits-environment.txt"#
-if (debug) {#
-  n.chains <- 1#
-  n.burnin <- 500#
-  n.iter <- 1000#
-  n.thin <- 1#
-  ## to allow replication of results across runs in JAGS#
-  ###
-  set.seed(1)#
-} else {#
-  n.chains <- 5#
-  n.burnin <- 5000#
-  n.iter <- 25000#
-  n.thin <- 25#
-}#
-standardize <- function(x) {#
-  if (is.numeric(x)) {#
-    y <- (x - mean(x, na.rm=TRUE))/sd(x, na.rm=TRUE)#
-  } else {#
-    y <- x#
-  }#
-  y#
-}#
-get.mean.vector <- function(x) {#
-  x.mean <- apply(x, 1, mean, na.rm=TRUE)#
-}#
-drop.levels <- function(dat) {#
-  dat[] <- lapply(dat, function(x) x[,drop=TRUE])#
-  return(dat)#
-}#
-likelihood <- function(y, mu, Sigma) {#
-  llike <- 0.0#
-  for (i in 1:nrow(y)) {#
-    llike <- llike + dmvnorm(y[i,], mu[i,], Sigma[,], log=TRUE)#
-  }#
-  llike#
-}#
-Dbar <- function(y, mu, Sigma) {#
-  dbar <- numeric(0)#
-  n.rep <- dim(mu)[1]#
-  for (i in 1:n.rep) {#
-    if ((i %% 10) == 0) {#
-      cat(".", sep="")#
-      flush.console()#
-    }#
-    if ((i %% 500) == 0) {#
-      cat(i, "\n")#
-      flush.console()#
-    }#
-    dbar[i] <- -2.0*likelihood(y, mu[i,,], Sigma[i,,])#
-  }#
-  mean(dbar)#
-}#
-Dhat <- function(y, mu.mean, Sigma.mean) {#
-  -2.0*likelihood(y, mu.mean, Sigma.mean)#
-}#
-## read in appropriate data set#
-###
-combined <- read.csv("traits-environment.csv", na.strings=".", header=TRUE)#
-## prepare the data for JAGS#
-###
-## 1. pull the relevant data into columns#
-###
-species <- combined$species#
-species#
-head(combined)#
-sla <- combined$SLA#
-area <- combined$Leaf_area#
-sd <- combined$SD#
-lwr <- combined$LWratio#
-spi <- combined$SPI#
-map <- combined$MAP#
-mat <- combined$MAT#
-ratio <- combined$ratio
-species
-combined$source_pop
-unique(combined$source_pop)
-length(unique(combined$source_pop))
-require(R2jags)#
-require(mvtnorm)#
-rm(list=ls())#
-debug <- FALSE#
-plot <- TRUE#
-print <- TRUE#
-report.DIC <- TRUE#
-gamma.rate.resid <- 1.0#
-gamma.shape.resid <- 1.0#
-gamma.rate.species <- 1.0#
-gamma.shape.species <-  1.0#
-beta.par <- 6#
-max.r <- 0.5#
-model.file="traits-environment.txt"#
-if (debug) {#
-  n.chains <- 1#
-  n.burnin <- 500#
-  n.iter <- 1000#
-  n.thin <- 1#
-  ## to allow replication of results across runs in JAGS#
-  ###
-  set.seed(1)#
-} else {#
-  n.chains <- 5#
-  n.burnin <- 5000#
-  n.iter <- 25000#
-  n.thin <- 25#
-}#
-standardize <- function(x) {#
-  if (is.numeric(x)) {#
-    y <- (x - mean(x, na.rm=TRUE))/sd(x, na.rm=TRUE)#
-  } else {#
-    y <- x#
-  }#
-  y#
-}#
-get.mean.vector <- function(x) {#
-  x.mean <- apply(x, 1, mean, na.rm=TRUE)#
-}#
-drop.levels <- function(dat) {#
-  dat[] <- lapply(dat, function(x) x[,drop=TRUE])#
-  return(dat)#
-}#
-likelihood <- function(y, mu, Sigma) {#
-  llike <- 0.0#
-  for (i in 1:nrow(y)) {#
-    llike <- llike + dmvnorm(y[i,], mu[i,], Sigma[,], log=TRUE)#
-  }#
-  llike#
-}#
-Dbar <- function(y, mu, Sigma) {#
-  dbar <- numeric(0)#
-  n.rep <- dim(mu)[1]#
-  for (i in 1:n.rep) {#
-    if ((i %% 10) == 0) {#
-      cat(".", sep="")#
-      flush.console()#
-    }#
-    if ((i %% 500) == 0) {#
-      cat(i, "\n")#
-      flush.console()#
-    }#
-    dbar[i] <- -2.0*likelihood(y, mu[i,,], Sigma[i,,])#
-  }#
-  mean(dbar)#
-}#
-Dhat <- function(y, mu.mean, Sigma.mean) {#
-  -2.0*likelihood(y, mu.mean, Sigma.mean)#
-}#
-## read in appropriate data set#
-###
-combined <- read.csv("traits-environment.csv", na.strings=".", header=TRUE)#
-## prepare the data for JAGS#
-###
-## 1. pull the relevant data into columns#
-###
-species <- combined$source_pop #combined$species#
-species#
-head(combined)#
-sla <- combined$SLA#
-area <- combined$Leaf_area#
-sd <- combined$SD#
-lwr <- combined$LWratio#
-spi <- combined$SPI#
-map <- combined$MAP#
-mat <- combined$MAT#
-ratio <- combined$ratio
-## 3. pull the vectors back out and standardize for JAGS#
-###
-species <- as.numeric(combined$species)#
-sla <- standardize(combined$SLA)#
-area <- standardize(combined$Leaf_area)#
-sd <- standardize(combined$SD)#
-lwr <- standardize(combined$Lwratio)#
-spi <- standardize(combined$SPI)#
-map <- standardize(combined$MAP)#
-mat <- standardize(combined$MAT)#
-ratio <- standardize(combined$ratio)#
-n.samp <- nrow(combined)#
-n.species <- max(species)#
-n.dim <- 5#
-n.species.dim <- n.species*n.dim
-n.samp <- nrow(combined)#
-n.species <- max(species, na.rm=TRUE)#
-n.dim <- 5#
-n.species.dim <- n.species*n.dim
-species
-combined <- read.csv("traits-environment.csv", na.strings=".", header=TRUE)#
-## prepare the data for JAGS#
-###
-species <- as.numeric(combined$source_pop) #as.numeric(combined$species)#
-sla <- standardize(combined$SLA)#
-area <- standardize(combined$Leaf_area)#
-sd <- standardize(combined$SD)#
-lwr <- standardize(combined$Lwratio)#
-spi <- standardize(combined$SPI)#
-map <- standardize(combined$MAP)#
-mat <- standardize(combined$MAT)#
-ratio <- standardize(combined$ratio)#
-n.samp <- nrow(combined)#
-n.species <- max(species, na.rm=TRUE)#
-n.dim <- 5#
-n.species.dim <- n.species*n.dim
-n.species
-debug
-debug <- TRUE
-debug
-## construct response matrix#
-###
-y <- as.matrix(data.frame(sla,#
-                          area,#
-                          sd,#
-                          lwr,#
-                          spi))#
-## parameters for Wishart prior#
-###
-## nrow = ncol = # of parameters, i.e., ncol(y) == 5#
-## nu <- nrow + 2 makes it as vague as possible#
-## Note: nu > nrow + 1 required for distribution to be#
-##       non-degenerate#
-###
-Omega <- diag(x=1.0, nrow=ncol(y), ncol=ncol(y))#
-nu <- nrow(Omega) + 2#
-## prior precision on regression coefficients#
-###
-tau <- 0.1#
-jags.data <- c("species",#
-               "y",#
-               "map",#
-               "mat",#
-               "ratio",#
-               "n.samp",#
-               "n.species",#
-               "n.dim",#
-               "n.species.dim",#
-               "tau",#
-               "gamma.rate.resid",#
-               "gamma.shape.resid",#
-               "gamma.rate.species",#
-               "gamma.shape.species",#
-               "beta.par",#
-               "max.r")#
-jags.par <- c("beta.map",#
-               "beta.mat",#
-               "beta.ratio",#
-               "mu",#
-               "rho.resid",#
-               "Sigma.resid",#
-               "rho.species",#
-               "Sigma.species")
-fit <- jags(data=jags.data,#
-            inits=NULL,#
-            parameters=jags.par,#
-            model.file=model.file,#
-            n.chains=n.chains,#
-            n.burnin=n.burnin,#
-            n.iter=n.iter,#
-            n.thin=n.thin,#
-            DIC=TRUE,#
-            working.directory=".")
-require(R2jags)#
-require(mvtnorm)#
-rm(list=ls())#
-debug <- FALSE#
-plot <- TRUE#
-print <- TRUE#
-report.DIC <- TRUE#
-gamma.rate.resid <- 1.0#
-gamma.shape.resid <- 1.0#
-gamma.rate.species <- 1.0#
-gamma.shape.species <-  1.0#
-beta.par <- 6#
-max.r <- 0.5#
-model.file="traits-environment.txt"#
-if (debug) {#
-  n.chains <- 1#
-  n.burnin <- 500#
-  n.iter <- 1000#
-  n.thin <- 1#
-  ## to allow replication of results across runs in JAGS#
-  ###
-  set.seed(1)#
-} else {#
-  n.chains <- 5#
-  n.burnin <- 5000#
-  n.iter <- 25000#
-  n.thin <- 25#
-}#
-standardize <- function(x) {#
-  if (is.numeric(x)) {#
-    y <- (x - mean(x, na.rm=TRUE))/sd(x, na.rm=TRUE)#
-  } else {#
-    y <- x#
-  }#
-  y#
-}#
-get.mean.vector <- function(x) {#
-  x.mean <- apply(x, 1, mean, na.rm=TRUE)#
-}#
-drop.levels <- function(dat) {#
-  dat[] <- lapply(dat, function(x) x[,drop=TRUE])#
-  return(dat)#
-}#
-likelihood <- function(y, mu, Sigma) {#
-  llike <- 0.0#
-  for (i in 1:nrow(y)) {#
-    llike <- llike + dmvnorm(y[i,], mu[i,], Sigma[,], log=TRUE)#
-  }#
-  llike#
-}#
-Dbar <- function(y, mu, Sigma) {#
-  dbar <- numeric(0)#
-  n.rep <- dim(mu)[1]#
-  for (i in 1:n.rep) {#
-    if ((i %% 10) == 0) {#
-      cat(".", sep="")#
-      flush.console()#
-    }#
-    if ((i %% 500) == 0) {#
-      cat(i, "\n")#
-      flush.console()#
-    }#
-    dbar[i] <- -2.0*likelihood(y, mu[i,,], Sigma[i,,])#
-  }#
-  mean(dbar)#
-}#
-Dhat <- function(y, mu.mean, Sigma.mean) {#
-  -2.0*likelihood(y, mu.mean, Sigma.mean)#
-}#
-## read in appropriate data set#
-###
-combined <- read.csv("traits-environment.csv", na.strings=".", header=TRUE)#
-## prepare the data for JAGS#
-###
-species <- as.numeric(combined$source_pop) #as.numeric(combined$species)#
-sla <- standardize(combined$SLA)#
-area <- standardize(combined$Leaf_area)#
-sd <- standardize(combined$SD)#
-lwr <- standardize(combined$Lwratio)#
-spi <- standardize(combined$SPI)#
-map <- standardize(combined$MAP)#
-mat <- standardize(combined$MAT)#
-ratio <- standardize(combined$ratio)#
-n.samp <- nrow(combined)#
-n.species <- max(species, na.rm=TRUE)#
-n.dim <- 5#
-n.species.dim <- n.species*n.dim#
-## construct response matrix#
-###
-y <- as.matrix(data.frame(sla,#
-                          area,#
-                          sd,#
-                          lwr,#
-                          spi))
-length(sla)
-length(area)
-length(sd)
-length(lwr)
-length(spi)
-combined <- read.csv("traits-environment.csv", na.strings=".", header=TRUE)#
-## prepare the data for JAGS#
-###
-species <- as.numeric(combined$source_pop) #as.numeric(combined$species)#
-sla <- standardize(combined$SLA)#
-area <- standardize(combined$leaf_area) #standardize(combined$Leaf_area)#
-sd <- standardize(combined$stomatal_density) #standardize(combined$SD)#
-lwr <- standardize(combined$LWR) #standardize(combined$Lwratio)#
-spi <- standardize(combined$SPI)#
-map <- standardize(combined$MAP)#
-mat <- standardize(combined$MAT)#
-ratio <- standardize(combined$ratio)#
-n.samp <- nrow(combined)#
-n.species <- max(species, na.rm=TRUE)#
-n.dim <- 5#
-n.species.dim <- n.species*n.dim#
-## construct response matrix#
-###
-y <- as.matrix(data.frame(sla,#
-                          area,#
-                          sd,#
-                          lwr,#
-                          spi))
-## parameters for Wishart prior#
-###
-## nrow = ncol = # of parameters, i.e., ncol(y) == 5#
-## nu <- nrow + 2 makes it as vague as possible#
-## Note: nu > nrow + 1 required for distribution to be#
-##       non-degenerate#
-###
-Omega <- diag(x=1.0, nrow=ncol(y), ncol=ncol(y))#
-nu <- nrow(Omega) + 2#
-## prior precision on regression coefficients#
-###
-tau <- 0.1#
-jags.data <- c("species",#
-               "y",#
-               "map",#
-               "mat",#
-               "ratio",#
-               "n.samp",#
-               "n.species",#
-               "n.dim",#
-               "n.species.dim",#
-               "tau",#
-               "gamma.rate.resid",#
-               "gamma.shape.resid",#
-               "gamma.rate.species",#
-               "gamma.shape.species",#
-               "beta.par",#
-               "max.r")#
-jags.par <- c("beta.map",#
-               "beta.mat",#
-               "beta.ratio",#
-               "mu",#
-               "rho.resid",#
-               "Sigma.resid",#
-               "rho.species",#
-               "Sigma.species")
-fit <- jags(data=jags.data,#
-            inits=NULL,#
-            parameters=jags.par,#
-            model.file=model.file,#
-            n.chains=n.chains,#
-            n.burnin=n.burnin,#
-            n.iter=n.iter,#
-            n.thin=n.thin,#
-            DIC=TRUE,#
-            working.directory=".")
-y[1,]
-combined[is.na(combined$leaf_area),]
-combined[is.na(combined$leaf_area),c("leaf_area","LWR","SLA","SPI","stomatal_density")]

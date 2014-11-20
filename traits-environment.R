@@ -3,6 +3,8 @@ require(mvtnorm)
 
 rm(list=ls())
 
+use.PCA <- TRUE
+
 debug <- FALSE
 ## prior parameters for covariance matrix
 ##
@@ -16,7 +18,11 @@ max.r <- 0.6
 ##
 tau <- 0.1
 
-model.file="traits-environment.txt"
+if (use.PCA) {
+  model.file <- "traits-environment-pca.txt"
+} else {
+  model.file <- "traits-environment.txt"
+}
 
 if (debug) {
   n.chains <- 1
@@ -42,7 +48,11 @@ standardize <- function(x) {
   y
 }
 
-combined <- read.csv("traits-environment.csv", na.strings=".", header=TRUE)
+if (use.PCA) {
+  combined <- read.csv("traits-environment-pca.csv", na.strings=".", header=TRUE)
+} else {
+  combined <- read.csv("traits-environment.csv", na.strings=".", header=TRUE)
+}
 
 ## prepare the data for JAGS
 ##
@@ -52,9 +62,15 @@ area <- standardize(combined$leaf_area)
 sd <- standardize(combined$stomatal_density)
 lwr <- standardize(combined$LWR)
 spi <- standardize(combined$SPI)
-map <- standardize(combined$MAP)
-mat <- standardize(combined$MAT)
-ratio <- standardize(combined$rain_DecJanFeb)
+if (use.PCA) {
+  pca1 <- standardize(combined$Prin1_temp)
+  pca2 <- standardize(combined$Prin2_dry)
+  pca3 <- standardize(combined$Prin3_map)
+} else {
+  map <- standardize(combined$MAP)
+  mat <- standardize(combined$MAT)
+  ratio <- standardize(combined$rain_DecJanFeb)
+}
 ## year read in as integer: convert to factor and back to numeric
 ## to make it (1,2) instead of (2013,2014)
 ##
@@ -62,16 +78,29 @@ year <- as.numeric(as.factor(combined$year))
 
 ## set up temporary data frame for cleaning and manipulation
 ##
-tmp <- data.frame(species=species,
-                  sla=sla,
-                  area=area,
-                  lwr=lwr,
-                  sd=sd,
-                  spi=spi,
-                  map=map,
-                  mat=mat,
-                  ratio=ratio,
-                  year=year)
+if (use.PCA) {
+  tmp <- data.frame(species=species,
+                    sla=sla,
+                    area=area,
+                    lwr=lwr,
+                    sd=sd,
+                    spi=spi,
+                    pca1=pca1,
+                    pca2=pca2,
+                    pca3=pca3,
+                    year=year)
+} else {
+  tmp <- data.frame(species=species,
+                    sla=sla,
+                    area=area,
+                    lwr=lwr,
+                    sd=sd,
+                    spi=spi,
+                    map=map,
+                    mat=mat,
+                    ratio=ratio,
+                    year=year)
+}
 ## remove lines for which all response variables are missing
 ## if sla is missing, all response variables are
 ##
@@ -97,9 +126,15 @@ area <- complete$area
 sd <- complete$sd
 lwr <- complete$lwr
 spi <- complete$spi
-map <- complete$map
-mat <- complete$mat
-ratio <- complete$ratio
+if (use.PCA) {
+  pca1 <- complete$pca1
+  pca2 <- complete$pca2
+  pca3 <- complete$pca3
+} else {
+  map <- complete$map
+  mat <- complete$mat
+  ratio <- complete$ratio
+}
 year <- complete$year
 n.samp <- nrow(complete)
 ## missing sd and spi
@@ -108,9 +143,15 @@ species.inc <- incomplete$species
 sla.inc <- incomplete$sla
 area.inc <- incomplete$area
 lwr.inc <- incomplete$lwr
-map.inc <- incomplete$map
-mat.inc <- incomplete$mat
-ratio.inc <- incomplete$ratio
+if (use.PCA) {
+  pca1.inc <- incomplete$pca1
+  pca2.inc <- incomplete$pca2
+  pca3.inc <- incomplete$pca3
+} else {
+  map.inc <- incomplete$map
+  mat.inc <- incomplete$mat
+  ratio.inc <- incomplete$ratio
+}
 year.inc <- incomplete$year
 n.samp.inc <- nrow(incomplete)
 
@@ -137,41 +178,78 @@ y <- as.matrix(data.frame(sla,
 z <- as.matrix(data.frame(sla.inc,
                           area.inc,
                           lwr.inc))
+if (use.PCA) {
+  jags.data <- c("species",
+                 "species.inc",
+                 "y",
+                 "z",
+                 "pca1",
+                 "pca2",
+                 "pca3",
+                 "year",
+                 "pca1.inc",
+                 "pca2.inc",
+                 "pca3.inc",
+                 "year.inc",
+                 "n.samp",
+                 "n.samp.inc",
+                 "n.species",
+                 "n.dim",
+                 "n.dim.inc",
+                 "n.species.dim",
+                 "Ginv",
+                 "tau",
+                 "gamma.rate.resid",
+                 "gamma.shape.resid",
+                 "gamma.rate.species",
+                 "gamma.shape.species",
+                 "beta.par",
+                 "max.r")
+  jags.par <- c("beta.pca1",
+                "beta.pca2",
+                "beta.pca3",
+                "rho.resid",
+                "Sigma.resid",
+                "rho.species",
+                "Sigma.species",
+                "yr")
 
-jags.data <- c("species",
-               "species.inc",
-               "y",
-               "z",
-               "map",
-               "mat",
-               "ratio",
-               "year",
-               "map.inc",
-               "mat.inc",
-               "ratio.inc",
-               "year.inc",
-               "n.samp",
-               "n.samp.inc",
-               "n.species",
-               "n.dim",
-               "n.dim.inc",
-               "n.species.dim",
-               "Ginv",
-               "tau",
-               "gamma.rate.resid",
-               "gamma.shape.resid",
-               "gamma.rate.species",
-               "gamma.shape.species",
-               "beta.par",
-               "max.r")
-jags.par <- c("beta.map",
-              "beta.mat",
-              "beta.ratio",
-              "rho.resid",
-              "Sigma.resid",
-              "rho.species",
-              "Sigma.species",
-              "yr")
+} else {
+  jags.data <- c("species",
+                 "species.inc",
+                 "y",
+                 "z",
+                 "map",
+                 "mat",
+                 "ratio",
+                 "year",
+                 "map.inc",
+                 "mat.inc",
+                 "ratio.inc",
+                 "year.inc",
+                 "n.samp",
+                 "n.samp.inc",
+                 "n.species",
+                 "n.dim",
+                 "n.dim.inc",
+                 "n.species.dim",
+                 "Ginv",
+                 "tau",
+                 "gamma.rate.resid",
+                 "gamma.shape.resid",
+                 "gamma.rate.species",
+                 "gamma.shape.species",
+                 "beta.par",
+                 "max.r")
+  jags.par <- c("beta.map",
+                "beta.mat",
+                "beta.ratio",
+                "rho.resid",
+                "Sigma.resid",
+                "rho.species",
+                "Sigma.species",
+                "yr")
+}
 
 fit <- jags(data=jags.data,
             inits=NULL,

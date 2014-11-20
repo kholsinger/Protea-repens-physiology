@@ -2,10 +2,7 @@ model {
   for (i in 1:n.samp) {
     ## leaf traits
     ##
-    leaf[i,1:5] ~ dmnorm(mu.lf[i,1:5], phi.lf[1:5,1:5])
-    for (j in 1:5) {
-      mu.lf[i,j] ~ dnorm(0.0, tau)
-    }
+    leaf[i,1:5] ~ dmnorm(mu.lf[1:5], phi.lf[1:5,1:5])
 
     ## physiological responses
     ##
@@ -44,6 +41,12 @@ model {
                    + beta.photo.trans*phys[i,3]
                    + beta.photo.humid*humid[i]
                    + beta.photo.temp*temp[i]
+  }
+
+  ## priors on leaf trait means
+  ##
+  for (j in 1:5) {
+    mu.lf[j] ~ dnorm(0.0, tau)
   }
 
   ## priors on path coefficients
