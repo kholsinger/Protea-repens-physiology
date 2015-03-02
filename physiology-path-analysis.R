@@ -3,8 +3,13 @@ require(R2jags)
 rm(list=ls())
 
 debug <- FALSE
+with.wue <- TRUE
 
-model.file="physiology-path-analysis.txt"
+if (with.wue) {
+  model.file <- "physiology-path-analysis-with-wue.txt"
+} else {
+  model.file <- "physiology-path-analysis.txt"
+}
 
 if (debug) {
   n.chains <- 1
@@ -30,7 +35,7 @@ standardize <- function(x) {
   y
 }
 
-fit <- function(dat, label) {
+fit <- function(dat, label, with.wue) {
   ## set up multi-response vectors
   ##
   leaf <- as.matrix(data.frame(dat$sla,
@@ -38,9 +43,17 @@ fit <- function(dat, label) {
                                dat$lfarea,
                                dat$spi,
                                dat$sdi))
-  phys <- as.matrix(data.frame(dat$lftemp,
-                               dat$fluor,
-                               dat$trans))
+  if (with.wue) {
+    phys <- as.matrix(data.frame(dat$lftemp,
+                                 dat$fluor,
+                                 dat$trans,
+                                 ## WUE
+                                 dat$trans/dat$photo))
+  } else {
+    phys <- as.matrix(data.frame(dat$lftemp,
+                                 dat$fluor,
+                                 dat$trans))
+  }
   ## set up individual covariates
   ##
   photo <- dat$photo
@@ -82,41 +95,87 @@ fit <- function(dat, label) {
                  "tau",
                  "n.plant",
                  "n.samp")
-  jags.par <- c("rho.lf",
-                "rho.ph",
-                "sigmasq.photo",
-                "sigmasq.lftemp",
-                "sigmasq.fluor",
-                "sigmasq.trans",
-                "beta.lftemp.sla",
-                "beta.lftemp.lwr",
-                "beta.lftemp.lfarea",
-                "beta.lftemp.spi",
-                "beta.lftemp.sdi",
-                "beta.lftemp.humid",
-                "beta.lftemp.temp",
-                "beta.fluor.sla",
-                "beta.fluor.lwr",
-                "beta.fluor.lfarea",
-                "beta.fluor.spi",
-                "beta.fluor.sdi",
-                "beta.fluor.humid",
-                "beta.fluor.temp",
-                "beta.trans.sla",
-                "beta.trans.lwr",
-                "beta.trans.lfarea",
-                "beta.trans.spi",
-                "beta.trans.sdi",
-                "beta.trans.humid",
-                "beta.trans.temp",
-                "beta.photo.lftemp",
-                "beta.photo.fluor",
-                "beta.photo.trans",
-                "beta.photo.humid",
-                "beta.photo.temp",
-                "mu.lf",
-                "mu.ph",
-                "mu.photo")
+  if (with.wue) {
+    jags.par <- c("rho.lf",
+                  "rho.ph",
+                  "sigmasq.photo",
+                  "sigmasq.lftemp",
+                  "sigmasq.fluor",
+                  "sigmasq.trans",
+                  "sigmasq.wue",
+                  "beta.lftemp.sla",
+                  "beta.lftemp.lwr",
+                  "beta.lftemp.lfarea",
+                  "beta.lftemp.spi",
+                  "beta.lftemp.sdi",
+                  "beta.lftemp.humid",
+                  "beta.lftemp.temp",
+                  "beta.fluor.sla",
+                  "beta.fluor.lwr",
+                  "beta.fluor.lfarea",
+                  "beta.fluor.spi",
+                  "beta.fluor.sdi",
+                  "beta.fluor.humid",
+                  "beta.fluor.temp",
+                  "beta.trans.sla",
+                  "beta.trans.lwr",
+                  "beta.trans.lfarea",
+                  "beta.trans.spi",
+                  "beta.trans.sdi",
+                  "beta.trans.humid",
+                  "beta.trans.temp",
+                  "beta.wue.sla",
+                  "beta.wue.lwr",
+                  "beta.wue.lfarea",
+                  "beta.wue.spi",
+                  "beta.wue.sdi",
+                  "beta.wue.humid",
+                  "beta.wue.temp",
+                  "beta.photo.lftemp",
+                  "beta.photo.fluor",
+                  "beta.photo.trans",
+                  "beta.photo.humid",
+                  "beta.photo.temp",
+                  "mu.lf",
+                  "mu.ph",
+                  "mu.photo")
+  } else {
+    jags.par <- c("rho.lf",
+                  "rho.ph",
+                  "sigmasq.photo",
+                  "sigmasq.lftemp",
+                  "sigmasq.fluor",
+                  "sigmasq.trans",
+                  "beta.lftemp.sla",
+                  "beta.lftemp.lwr",
+                  "beta.lftemp.lfarea",
+                  "beta.lftemp.spi",
+                  "beta.lftemp.sdi",
+                  "beta.lftemp.humid",
+                  "beta.lftemp.temp",
+                  "beta.fluor.sla",
+                  "beta.fluor.lwr",
+                  "beta.fluor.lfarea",
+                  "beta.fluor.spi",
+                  "beta.fluor.sdi",
+                  "beta.fluor.humid",
+                  "beta.fluor.temp",
+                  "beta.trans.sla",
+                  "beta.trans.lwr",
+                  "beta.trans.lfarea",
+                  "beta.trans.spi",
+                  "beta.trans.sdi",
+                  "beta.trans.humid",
+                  "beta.trans.temp",
+                  "beta.photo.lftemp",
+                  "beta.photo.fluor",
+                  "beta.photo.trans",
+                  "beta.photo.humid",
+                  "beta.photo.temp",
+                  "mu.lf",
+                  "mu.ph",
+                  "mu.photo")
+  }
 
   dat.fit <- jags(data=jags.data,
                   inits=NULL,
@@ -172,8 +231,8 @@ kleinm <- droplevels(subset(clean, site=="Kleinmond"))
 dehoop$plant <- as.numeric(as.factor(dehoop$plant))
 kleinm$plant <- as.numeric(as.factor(kleinm$plant))
 
-dehoop.fit <- fit(dehoop, "Path analysis results at De Hoop")
-kleinm.fit <- fit(kleinm, "Path analysis results at Kleinmond")
+dehoop.fit <- fit(dehoop, "Path analysis results at De Hoop", with.wue)
+kleinm.fit <- fit(kleinm, "Path analysis results at Kleinmond", with.wue)
 
 filename <- paste("results-path-",
                   gsub(":", "-",

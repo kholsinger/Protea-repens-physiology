@@ -49,11 +49,8 @@ model {
   ##
   ## only one year of data for last two dimensions
   ##
-  for (j in 1:3) {
+  for (j in 1:5) {
     yr[j] ~ dnorm(0.0, tau)
-  }
-  for (j in 4:5) {
-    yr[j] <- 0.0
   }
 
   ## priors on beta's
