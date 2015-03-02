@@ -7,4 +7,5 @@
 ## R-related files that shouldn’t be synced
 ##
 .Rhistory
+.Rapp.history
 *.Rsave
