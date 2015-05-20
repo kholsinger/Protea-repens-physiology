@@ -46,10 +46,7 @@ fit <- function(dat, label, with.wue) {
   if (with.wue) {
     phys <- as.matrix(data.frame(dat$lftemp,
                                  dat$fluor,
-                                 dat$trans,
-                                 dat$cond,
-                                 ## WUE
-                                 dat$cond/dat$photo))
+                                 dat$trans))
   } else {
     phys <- as.matrix(data.frame(dat$lftemp,
                                  dat$fluor,
@@ -58,6 +55,10 @@ fit <- function(dat, label, with.wue) {
   ## set up individual covariates
   ##
   photo <- dat$photo
+  cond <- dat$cond
+  log.wue <- dat$log.wue
+  log.photo <- dat$log.photo
+  log.cond <- dat$log.cond
   humid <- dat$humid
   temp <- dat$temp
   plant <- dat$plant
@@ -85,6 +86,10 @@ fit <- function(dat, label, with.wue) {
   jags.data <- c("leaf",
                  "phys",
                  "photo",
+                 "cond",
+                 "log.wue",
+                 "log.photo",
+                 "log.cond",
                  "humid",
                  "temp",
                  "plant",
@@ -126,27 +131,15 @@ fit <- function(dat, label, with.wue) {
                   "beta.trans.sdi",
                   "beta.trans.humid",
                   "beta.trans.temp",
-                  "beta.cond.sla",
-                  "beta.cond.lwr",
-                  "beta.cond.lfarea",
-                  "beta.cond.spi",
-                  "beta.cond.sdi",
-                  "beta.cond.humid",
-                  "beta.cond.temp",
-                  "beta.wue.sla",
-                  "beta.wue.lwr",
-                  "beta.wue.lfarea",
-                  "beta.wue.spi",
-                  "beta.wue.sdi",
-                  "beta.wue.humid",
-                  "beta.wue.temp",
                   "beta.photo.lftemp",
                   "beta.photo.fluor",
-                  "beta.photo.trans",
                   "beta.photo.cond",
-                  "beta.photo.wue",
                   "beta.photo.humid",
                   "beta.photo.temp",
+                  "beta.cond.trans",
+                  "beta.cond.temp",
+                  "beta.wue.photo",
+                  "beta.wue.cond",
                   "mu.lf",
                   "mu.ph",
                   "mu.photo")
@@ -228,6 +221,9 @@ clean <- data.frame(sla=standardize(raw$SLA),
                     cond=standardize(raw$Cond),
                     trans=standardize(raw$transp),
                     photo=standardize(raw$photosynthesis),
+                    log.wue=standardize(log(raw$photosynthesis/raw$Cond)),
+                    log.photo=standardize(log(raw$photosynthesis)),
+                    log.cond=standardize(log(raw$Cond)),
                     humid=standardize(raw$relative_humidity),
                     temp=standardize(raw$air_temp),
                     site=raw$site,
