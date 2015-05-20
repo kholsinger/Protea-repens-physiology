@@ -3,13 +3,6 @@ require(R2jags)
 rm(list=ls())
 
 debug <- FALSE
-with.wue <- TRUE
-
-if (with.wue) {
-  model.file <- "physiology-path-analysis-with-wue.txt"
-} else {
-  model.file <- "physiology-path-analysis.txt"
-}
 
 if (debug) {
   n.chains <- 1
@@ -35,7 +28,9 @@ standardize <- function(x) {
   y
 }
 
-fit <- function(dat, label, with.wue) {
+fit <- function(dat, label, model) {
+  model.file <- paste("physiology-path-analysis-model-", model, ".txt", sep="")
+
   ## set up multi-response vectors
   ##
   leaf <- as.matrix(data.frame(dat$sla,
@@ -43,11 +38,18 @@ fit <- function(dat, label, with.wue) {
                                dat$lfarea,
                                dat$spi,
                                dat$sdi))
-  if (with.wue) {
+  if (model == 1) {
     phys <- as.matrix(data.frame(dat$lftemp,
                                  dat$fluor,
-                                 dat$trans))
-  } else {
+                                 dat$trans,
+                                 dat$cond,
+                                 dat$log.wue))
+  } else if (model == 2) {
+    phys <- as.matrix(data.frame(dat$lftemp,
+                                 dat$fluor,
+                                 dat$trans,
+                                 dat$cond))
+  } else if (model == 3) {
     phys <- as.matrix(data.frame(dat$lftemp,
                                  dat$fluor,
                                  dat$trans))
@@ -56,9 +58,11 @@ fit <- function(dat, label, with.wue) {
   ##
   photo <- dat$photo
   cond <- dat$cond
-  log.wue <- dat$log.wue
-  log.photo <- dat$log.photo
-  log.cond <- dat$log.cond
+  if ((model == 2) || (model == 3)) {
+    log.wue <- dat$log.wue
+    log.photo <- dat$log.photo
+    log.cond <- dat$log.cond
+  }
   humid <- dat$humid
   temp <- dat$temp
   plant <- dat$plant
@@ -83,25 +87,154 @@ fit <- function(dat, label, with.wue) {
   ##
   nu <- 1
 
-  jags.data <- c("leaf",
-                 "phys",
-                 "photo",
-                 "cond",
-                 "log.wue",
-                 "log.photo",
-                 "log.cond",
-                 "humid",
-                 "temp",
-                 "plant",
-                 "Omega.lf",
-                 "Omega.ph",
-                 "nu.lf",
-                 "nu.ph",
-                 "nu",
-                 "tau",
-                 "n.plant",
-                 "n.samp")
-  if (with.wue) {
+  if (model == 1) {
+    jags.data <- c("leaf",
+                   "phys",
+                   "photo",
+                   "cond",
+                   "humid",
+                   "temp",
+                   "plant",
+                   "Omega.lf",
+                   "Omega.ph",
+                   "nu.lf",
+                   "nu.ph",
+                   "nu",
+                   "tau",
+                   "n.plant",
+                   "n.samp")
+  } else if (model == 2) {
+    jags.data <- c("leaf",
+                   "phys",
+                   "photo",
+                   "log.wue",
+                   "log.photo",
+                   "log.cond",
+                   "humid",
+                   "temp",
+                   "plant",
+                   "Omega.lf",
+                   "Omega.ph",
+                   "nu.lf",
+                   "nu.ph",
+                   "nu",
+                   "tau",
+                   "n.plant",
+                   "n.samp")
+  } else if (model == 3) {
+    jags.data <- c("leaf",
+                   "phys",
+                   "photo",
+                   "log.wue",
+                   "log.photo",
+                   "log.cond",
+                   "humid",
+                   "temp",
+                   "plant",
+                   "Omega.lf",
+                   "Omega.ph",
+                   "nu.lf",
+                   "nu.ph",
+                   "nu",
+                   "tau",
+                   "n.plant",
+                   "n.samp")
+  }
+  if (model == 1) {
+    jags.par <- c("rho.lf",
+                  "rho.ph",
+                  "sigmasq.photo",
+                  "sigmasq.lftemp",
+                  "sigmasq.fluor",
+                  "sigmasq.trans",
+                  "sigmasq.wue",
+                  "sigmasq.cond",
+                  "beta.lftemp.sla",
+                  "beta.lftemp.lwr",
+                  "beta.lftemp.lfarea",
+                  "beta.lftemp.spi",
+                  "beta.lftemp.sdi",
+                  "beta.lftemp.humid",
+                  "beta.lftemp.temp",
+                  "beta.fluor.sla",
+                  "beta.fluor.lwr",
+                  "beta.fluor.lfarea",
+                  "beta.fluor.spi",
+                  "beta.fluor.sdi",
+                  "beta.fluor.humid",
+                  "beta.fluor.temp",
+                  "beta.trans.sla",
+                  "beta.trans.lwr",
+                  "beta.trans.lfarea",
+                  "beta.trans.spi",
+                  "beta.trans.sdi",
+                  "beta.trans.humid",
+                  "beta.trans.temp",
+                  "beta.cond.sla",
+                  "beta.cond.lwr",
+                  "beta.cond.lfarea",
+                  "beta.cond.spi",
+                  "beta.cond.sdi",
+                  "beta.cond.humid",
+                  "beta.cond.temp",
+                  "beta.wue.sla",
+                  "beta.wue.lwr",
+                  "beta.wue.lfarea",
+                  "beta.wue.spi",
+                  "beta.wue.sdi",
+                  "beta.wue.humid",
+                  "beta.wue.temp",
+                  "beta.photo.lftemp",
+                  "beta.photo.fluor",
+                  "beta.photo.cond",
+                  "beta.photo.wue",
+                  "beta.photo.humid",
+                  "beta.photo.temp")
+  } else if (model == 2) {
+    jags.par <- c("rho.lf",
+                  "rho.ph",
+                  "sigmasq.photo",
+                  "sigmasq.lftemp",
+                  "sigmasq.fluor",
+                  "sigmasq.trans",
+                  "sigmasq.wue",
+                  "sigmasq.cond",
+                  "beta.lftemp.sla",
+                  "beta.lftemp.lwr",
+                  "beta.lftemp.lfarea",
+                  "beta.lftemp.spi",
+                  "beta.lftemp.sdi",
+                  "beta.lftemp.humid",
+                  "beta.lftemp.temp",
+                  "beta.fluor.sla",
+                  "beta.fluor.lwr",
+                  "beta.fluor.lfarea",
+                  "beta.fluor.spi",
+                  "beta.fluor.sdi",
+                  "beta.fluor.humid",
+                  "beta.fluor.temp",
+                  "beta.trans.sla",
+                  "beta.trans.lwr",
+                  "beta.trans.lfarea",
+                  "beta.trans.spi",
+                  "beta.trans.sdi",
+                  "beta.trans.humid",
+                  "beta.trans.temp",
+                  "beta.cond.sla",
+                  "beta.cond.lwr",
+                  "beta.cond.lfarea",
+                  "beta.cond.spi",
+                  "beta.cond.sdi",
+                  "beta.cond.humid",
+                  "beta.cond.temp",
+                  "beta.photo.lftemp",
+                  "beta.photo.fluor",
+                  "beta.photo.cond",
+                  "beta.photo.humid",
+                  "beta.photo.temp",
+                  "beta.wue.photo",
+                  "beta.wue.cond")
+  } else if (model == 3) {
     jags.par <- c("rho.lf",
                   "rho.ph",
                   "sigmasq.photo",
@@ -139,46 +272,7 @@ fit <- function(dat, label, with.wue) {
                   "beta.cond.trans",
                   "beta.cond.temp",
                   "beta.wue.photo",
-                  "beta.wue.cond",
-                  "mu.lf",
-                  "mu.ph",
-                  "mu.photo")
-  } else {
-    jags.par <- c("rho.lf",
-                  "rho.ph",
-                  "sigmasq.photo",
-                  "sigmasq.lftemp",
-                  "sigmasq.fluor",
-                  "sigmasq.trans",
-                  "beta.lftemp.sla",
-                  "beta.lftemp.lwr",
-                  "beta.lftemp.lfarea",
-                  "beta.lftemp.spi",
-                  "beta.lftemp.sdi",
-                  "beta.lftemp.humid",
-                  "beta.lftemp.temp",
-                  "beta.fluor.sla",
-                  "beta.fluor.lwr",
-                  "beta.fluor.lfarea",
-                  "beta.fluor.spi",
-                  "beta.fluor.sdi",
-                  "beta.fluor.humid",
-                  "beta.fluor.temp",
-                  "beta.trans.sla",
-                  "beta.trans.lwr",
-                  "beta.trans.lfarea",
-                  "beta.trans.spi",
-                  "beta.trans.sdi",
-                  "beta.trans.humid",
-                  "beta.trans.temp",
-                  "beta.photo.lftemp",
-                  "beta.photo.fluor",
-                  "beta.photo.trans",
-                  "beta.photo.humid",
-                  "beta.photo.temp",
-                  "mu.lf",
-                  "mu.ph",
-                  "mu.photo")
+                  "beta.wue.cond")
   }
 
   dat.fit <- jags(data=jags.data,
@@ -192,7 +286,9 @@ fit <- function(dat, label, with.wue) {
                   DIC=TRUE,
                   working.directory=".")
   opt.old <- options(width=120)
-  filename <- paste("results-path-",
+  filename <- paste("results-path-model-",
+                    model,
+                    "-",
                     gsub(":", "-",
                          gsub(" ", "-", Sys.time())),
                     ".txt",
@@ -200,7 +296,7 @@ fit <- function(dat, label, with.wue) {
   if (!debug) {
     sink(filename, split=TRUE)
   }
-  cat(label, "\n\n")
+  cat(label, "\n", model.file, "\n\n")
   print(dat.fit, digits.summary=3)
   if (!debug) {
     sink()
@@ -239,16 +335,18 @@ kleinm <- droplevels(subset(clean, site=="Kleinmond"))
 dehoop$plant <- as.numeric(as.factor(dehoop$plant))
 kleinm$plant <- as.numeric(as.factor(kleinm$plant))
 
-dehoop.fit <- fit(dehoop, "Path analysis results at De Hoop", with.wue)
-kleinm.fit <- fit(kleinm, "Path analysis results at Kleinmond", with.wue)
+for (model in 1:3) {
+  dehoop.fit <- fit(dehoop, "Path analysis results at De Hoop", model)
+  kleinm.fit <- fit(kleinm, "Path analysis results at Kleinmond", model)
 
-filename <- paste("results-path-",
-                  gsub(":", "-",
-                       gsub(" ", "-", Sys.time())),
-                  ".Rsave",
-                  sep="")
-save(dehoop,
-     dehoop.fit,
-     kleinm,
-     kleinm.fit,
-     file=filename)
+  filename <- paste("results-path-",
+                    gsub(":", "-",
+                         gsub(" ", "-", Sys.time())),
+                    ".Rsave",
+                    sep="")
+  save(dehoop,
+       dehoop.fit,
+       kleinm,
+       kleinm.fit,
+       file=filename)
+}

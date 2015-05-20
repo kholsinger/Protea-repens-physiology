@@ -1,8 +1,3 @@
-## conductance is fed by transpiration and temperature
-##   either conductance or transpiration feeds into photosynthesis
-## WUE is fed by conductance and photosynthesis - log transforms for
-##   linearization of ratio
-
 model {
   for (i in 1:n.samp) {
     ## leaf traits
@@ -11,7 +6,7 @@ model {
 
     ## physiological responses
     ##
-    phys[i,1:3] ~ dmnorm(mu.ph[i,1:3], phi.ph[1:3,1:3])
+    phys[i,1:4] ~ dmnorm(mu.ph[i,1:4], phi.ph[1:4,1:4])
     mu.ph[i,1] <- beta.lftemp.0[plant[i]]
                   + beta.lftemp.sla*leaf[i,1]
                   + beta.lftemp.lwr*leaf[i,2]
@@ -36,6 +31,14 @@ model {
                   + beta.trans.sdi*leaf[i,5]
                   + beta.trans.humid*humid[i]
                   + beta.trans.temp*temp[i]
+    mu.ph[i,4] <- beta.cond.0[plant[i]]
+                  + beta.cond.sla*leaf[i,1]
+                  + beta.cond.lwr*leaf[i,2]
+                  + beta.cond.lfarea*leaf[i,3]
+                  + beta.cond.spi*leaf[i,4]
+                  + beta.cond.sdi*leaf[i,5]
+                  + beta.cond.humid*humid[i]
+                  + beta.cond.temp*temp[i]
 
     ## photosynthetic rate
     ##
@@ -43,16 +46,10 @@ model {
     mu.photo[i] <- beta.photo.0
                    + beta.photo.lftemp*phys[i,1]
                    + beta.photo.fluor*phys[i,2]
-                   + beta.photo.cond*cond[i]
+                   + beta.photo.trans*phys[i,3]
+                   + beta.photo.cond*phys[i,4]
                    + beta.photo.humid*humid[i]
                    + beta.photo.temp*temp[i]
-
-    ## conductance
-    ##
-    cond[i] ~ dnorm(mu.cond[i], tau.cond)
-    mu.cond[i] <- beta.cond.0
-                  + beta.cond.trans*phys[i,3]
-                  + beta.cond.temp*temp[i]
 
     ## WUE
     log.wue[i] ~ dnorm(mu.wue[i], tau.wue)
@@ -90,13 +87,19 @@ model {
   beta.trans.sdi ~ dnorm(0.0, tau)
   beta.trans.humid ~ dnorm(0.0, tau)
   beta.trans.temp ~ dnorm(0.0, tau)
+  beta.cond.sla ~ dnorm(0.0, tau)
+  beta.cond.lwr ~ dnorm(0.0, tau)
+  beta.cond.lfarea ~ dnorm(0.0, tau)
+  beta.cond.spi ~ dnorm(0.0, tau)
+  beta.cond.sdi ~ dnorm(0.0, tau)
+  beta.cond.humid ~ dnorm(0.0, tau)
+  beta.cond.temp ~ dnorm(0.0, tau)
   beta.photo.lftemp ~ dnorm(0.0, tau)
   beta.photo.fluor ~ dnorm(0.0, tau)
+  beta.photo.trans ~ dnorm(0.0, tau)
   beta.photo.cond ~ dnorm(0.0, tau)
   beta.photo.humid ~ dnorm(0.0, tau)
   beta.photo.temp ~ dnorm(0.0, tau)
-  beta.cond.trans ~ dnorm(0.0, tau)
-  beta.cond.temp ~ dnorm(0.0, tau)
   beta.wue.photo ~ dnorm(0.0, tau)
   beta.wue.cond ~ dnorm(0.0, tau)
 
@@ -106,18 +109,17 @@ model {
     beta.lftemp.0[i] ~ dnorm(0.0, tau.lftemp)
     beta.fluor.0[i] ~ dnorm(0.0, tau.fluor)
     beta.trans.0[i] ~ dnorm(0.0, tau.trans)
+    beta.cond.0[i] ~ dnorm(0.0, tau.cond)
   }
-  ## assume no individual plant effect for photosynthesis,
-  ## conductance, or WUE
+  ## assume no individual plant effect for photosynthesis or WUE
   ##
   beta.photo.0 ~ dnorm(0.0, tau)
-  beta.cond.0 ~ dnorm(0.0, tau)
   beta.wue.0 ~ dnorm(0.0, tau)
 
   ## priors on precision parameters
   ##
   phi.lf[1:5,1:5] ~ dwish(Omega.lf, nu.lf)
-  phi.ph[1:3,1:3] ~ dwish(Omega.ph, nu.ph)
+  phi.ph[1:4,1:4] ~ dwish(Omega.ph, nu.ph)
   tau.photo ~ dgamma(nu, nu)
   tau.lftemp ~ dgamma(nu, nu)
   tau.fluor ~ dgamma(nu, nu)
@@ -127,7 +129,7 @@ model {
   ## convert precisions to covariance matrices and variance
   ##
   phx.lf[1:5,1:5] <- inverse(phi.lf[1:5,1:5])
-  phx.ph[1:3,1:3] <- inverse(phi.ph[1:3,1:3])
+  phx.ph[1:4,1:4] <- inverse(phi.ph[1:4,1:4])
   sigmasq.photo <- 1.0/tau.photo
   sigmasq.lftemp <- 1.0/tau.lftemp
   sigmasq.fluor <- 1.0/tau.fluor
@@ -143,9 +145,9 @@ model {
       rho.lf[j,i] <- rho.lf[i,j]
     }
   }
-  for (i in 1:3) {
+  for (i in 1:4) {
     rho.ph[i,i] <- 1.0
-    for (j in (i+1):3) {
+    for (j in (i+1):4) {
       rho.ph[i,j] <- phx.ph[i,j]/(sqrt(phx.ph[i,i])*sqrt(phx.ph[j,j]))
       rho.ph[j,i] <- rho.ph[i,j]
     }
