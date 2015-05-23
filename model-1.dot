@@ -1,0 +1,52 @@
+digraph {
+  
+  sla -> lftemp;
+  lwr -> lftemp;
+  lfarea -> lftemp;
+  spi -> lftemp;
+  sdi -> lftemp;
+  humid -> lftemp;
+  temp -> lftemp;
+  
+  sla -> fluor;
+  lwr -> fluor;
+  lfarea -> fluor;
+  spi -> fluor;
+  sdi -> fluor;
+  humid -> fluor;
+  temp -> fluor;
+
+  sla -> trans;
+  lwr -> trans;
+  lfarea -> trans;
+  spi -> trans;
+  sdi -> trans;
+  humid -> trans;
+  temp -> trans;
+
+  sla -> cond;
+  lwr -> cond;
+  lfarea -> cond;
+  spi -> cond;
+  sdi -> cond;
+  humid -> cond;
+  temp -> cond;
+
+  /*
+  lftemp -> fluor [dir="both"];
+  lftemp -> trans [dir="both"];
+  lftemp -> cond [dir="both"];
+
+  fluor -> trans [dir="both"];
+  fluor -> cond [dir="both"];
+
+  trans -> cond [dir="both"];
+  */
+
+  lftemp -> photo;
+  fluor -> photo;
+  trans -> photo;
+  cond -> photo;
+  humid -> photo;
+  temp -> photo;
+}
