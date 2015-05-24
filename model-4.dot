@@ -24,6 +24,14 @@ digraph {
   humid -> cond;
   temp -> cond;
 
+  sla -> trans;
+  lwr -> trans;
+  lfarea -> trans;
+  spi -> trans;
+  sdi -> trans;
+  humid -> trans;
+  temp -> trans;
+
   /*
   lftemp -> fluor [dir="both"];
   lftemp -> trans [dir="both"];

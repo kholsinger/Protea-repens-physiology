@@ -54,7 +54,8 @@ fit <- function(dat, label, model) {
   } else if (model == 4) {
     phys <- as.matrix(data.frame(dat$lftemp,
                                  dat$fluor,
-                                 dat$cond))
+                                 dat$cond,
+                                 dat$trans))
   }
   ## set up individual covariates
   ##
@@ -312,6 +313,13 @@ fit <- function(dat, label, model) {
                   "beta.cond.sdi",
                   "beta.cond.humid",
                   "beta.cond.temp",
+                  "beta.trans.sla",
+                  "beta.trans.lwr",
+                  "beta.trans.lfarea",
+                  "beta.trans.spi",
+                  "beta.trans.sdi",
+                  "beta.trans.humid",
+                  "beta.trans.temp",
                   "beta.photo.lftemp",
                   "beta.photo.fluor",
                   "beta.photo.cond",
