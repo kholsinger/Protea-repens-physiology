@@ -56,10 +56,16 @@ fit <- function(dat, label, model) {
                                  dat$fluor,
                                  dat$cond,
                                  dat$trans))
+  } else if (model == 5) {
+    phys <- as.matrix(data.frame(dat$lftemp,
+                                 dat$fluor,
+                                 dat$cond,
+                                 dat$trans))
   }
   ## set up individual covariates
   ##
   photo <- dat$photo
+  wue <- dat$wue
   cond <- dat$cond
   humid <- dat$humid
   temp <- dat$temp
@@ -136,6 +142,21 @@ fit <- function(dat, label, model) {
     jags.data <- c("leaf",
                    "phys",
                    "photo",
+                   "humid",
+                   "temp",
+                   "plant",
+                   "Omega.lf",
+                   "Omega.ph",
+                   "nu.lf",
+                   "nu.ph",
+                   "nu",
+                   "tau",
+                   "n.plant",
+                   "n.samp")
+  } else if (model == 5) {
+    jags.data <- c("leaf",
+                   "phys",
+                   "wue",
                    "humid",
                    "temp",
                    "plant",
@@ -326,6 +347,49 @@ fit <- function(dat, label, model) {
                   "mu.lf",
                   "mu.ph",
                   "mu.photo")
+  } else if (model == 5) {
+    jags.par <- c("phx.lf",
+                  "phx.ph",
+                  "rho.lf",
+                  "rho.ph",
+                  "sigmasq.wue",
+                  "sigmasq.indiv.lftemp",
+                  "sigmasq.indiv.fluor",
+                  "sigmasq.indiv.cond",
+                  "beta.lftemp.sla",
+                  "beta.lftemp.lwr",
+                  "beta.lftemp.lfarea",
+                  "beta.lftemp.spi",
+                  "beta.lftemp.sdi",
+                  "beta.lftemp.humid",
+                  "beta.lftemp.temp",
+                  "beta.fluor.sla",
+                  "beta.fluor.lwr",
+                  "beta.fluor.lfarea",
+                  "beta.fluor.spi",
+                  "beta.fluor.sdi",
+                  "beta.fluor.humid",
+                  "beta.fluor.temp",
+                  "beta.cond.sla",
+                  "beta.cond.lwr",
+                  "beta.cond.lfarea",
+                  "beta.cond.spi",
+                  "beta.cond.sdi",
+                  "beta.cond.humid",
+                  "beta.cond.temp",
+                  "beta.trans.sla",
+                  "beta.trans.lwr",
+                  "beta.trans.lfarea",
+                  "beta.trans.spi",
+                  "beta.trans.sdi",
+                  "beta.trans.humid",
+                  "beta.trans.temp",
+                  "beta.wue.lftemp",
+                  "beta.wue.fluor",
+                  "beta.wue.cond",
+                  "mu.lf",
+                  "mu.ph",
+                  "mu.wue")
   }
 
   dat.fit <- jags(data=jags.data,
@@ -357,6 +421,22 @@ fit <- function(dat, label, model) {
   dat.fit
 }
 
+analysis <- function(dehoop, kleinm, model) {
+  dehoop.fit <- fit(dehoop, "Path analysis results at De Hoop", model)
+  kleinm.fit <- fit(kleinm, "Path analysis results at Kleinmond", model)
+
+  filename <- paste("results-path-",
+                    gsub(":", "-",
+                         gsub(" ", "-", Sys.time())),
+                    ".Rsave",
+                    sep="")
+  save(dehoop,
+       dehoop.fit,
+       kleinm,
+       kleinm.fit,
+       file=filename)
+}
+
 raw <- read.csv("physiology-path-analysis.csv",
                 header=TRUE,
                 na.strings=".")
@@ -370,6 +450,7 @@ clean <- data.frame(sla=standardize(raw$SLA),
                     cond=standardize(raw$Cond),
                     trans=standardize(raw$transp),
                     photo=standardize(raw$photosynthesis),
+                    wue=standardize(raw$photosynthesis/raw$Cond),
                     humid=standardize(raw$relative_humidity),
                     temp=standardize(raw$air_temp),
                     site=raw$site,
@@ -385,18 +466,3 @@ kleinm <- droplevels(subset(clean, site=="Kleinmond"))
 dehoop$plant <- as.numeric(as.factor(dehoop$plant))
 kleinm$plant <- as.numeric(as.factor(kleinm$plant))
 
-for (model in 1:4) {
-  dehoop.fit <- fit(dehoop, "Path analysis results at De Hoop", model)
-  kleinm.fit <- fit(kleinm, "Path analysis results at Kleinmond", model)
-
-  filename <- paste("results-path-",
-                    gsub(":", "-",
-                         gsub(" ", "-", Sys.time())),
-                    ".Rsave",
-                    sep="")
-  save(dehoop,
-       dehoop.fit,
-       kleinm,
-       kleinm.fit,
-       file=filename)
-}

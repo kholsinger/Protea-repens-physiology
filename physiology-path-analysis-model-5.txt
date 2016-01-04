@@ -1,0 +1,138 @@
+model {
+  for (i in 1:n.samp) {
+    ## leaf traits
+    ##
+    leaf[i,1:5] ~ dmnorm(mu.lf[1:5], phi.lf[1:5,1:5])
+
+    ## physiological responses
+    ##
+    phys[i,1:4] ~ dmnorm(mu.ph[i,1:4], phi.ph[1:4,1:4])
+    mu.ph[i,1] <- beta.lftemp.0[plant[i]]
+                  + beta.lftemp.sla*leaf[i,1]
+                  + beta.lftemp.lwr*leaf[i,2]
+                  + beta.lftemp.lfarea*leaf[i,3]
+                  + beta.lftemp.spi*leaf[i,4]
+                  + beta.lftemp.sdi*leaf[i,5]
+                  + beta.lftemp.humid*humid[i]
+                  + beta.lftemp.temp*temp[i]
+    mu.ph[i,2] <- beta.fluor.0[plant[i]]
+                  + beta.fluor.sla*leaf[i,1]
+                  + beta.fluor.lwr*leaf[i,2]
+                  + beta.fluor.lfarea*leaf[i,3]
+                  + beta.fluor.spi*leaf[i,4]
+                  + beta.fluor.sdi*leaf[i,5]
+                  + beta.fluor.humid*humid[i]
+                  + beta.fluor.temp*temp[i]
+    mu.ph[i,3] <- beta.cond.0[plant[i]]
+                  + beta.cond.sla*leaf[i,1]
+                  + beta.cond.lwr*leaf[i,2]
+                  + beta.cond.lfarea*leaf[i,3]
+                  + beta.cond.spi*leaf[i,4]
+                  + beta.cond.sdi*leaf[i,5]
+                  + beta.cond.humid*humid[i]
+                  + beta.cond.temp*temp[i]
+    mu.ph[i,4] <- beta.trans.0[plant[i]]
+                  + beta.trans.sla*leaf[i,1]
+                  + beta.trans.lwr*leaf[i,2]
+                  + beta.trans.lfarea*leaf[i,3]
+                  + beta.trans.spi*leaf[i,4]
+                  + beta.trans.sdi*leaf[i,5]
+                  + beta.trans.humid*humid[i]
+                  + beta.trans.temp*temp[i]
+
+    ## WUE
+    ##
+    wue[i] ~ dnorm(mu.wue[i], tau.wue)
+    mu.wue[i] <- beta.wue.0
+                   + beta.wue.lftemp*phys[i,1]
+                   + beta.wue.fluor*phys[i,2]
+                   + beta.wue.cond*phys[i,3]
+  }
+
+  ## priors on leaf trait means
+  ##
+  for (j in 1:5) {
+    mu.lf[j] ~ dnorm(0.0, tau)
+  }
+
+  ## priors on path coefficients
+  ##
+  beta.lftemp.sla ~ dnorm(0.0, tau)
+  beta.lftemp.lwr ~ dnorm(0.0, tau)
+  beta.lftemp.lfarea ~ dnorm(0.0, tau)
+  beta.lftemp.spi ~ dnorm(0.0, tau)
+  beta.lftemp.sdi ~ dnorm(0.0, tau)
+  beta.lftemp.humid ~ dnorm(0.0, tau)
+  beta.lftemp.temp ~ dnorm(0.0, tau)
+  beta.fluor.sla ~ dnorm(0.0, tau)
+  beta.fluor.lwr ~ dnorm(0.0, tau)
+  beta.fluor.lfarea ~ dnorm(0.0, tau)
+  beta.fluor.spi ~ dnorm(0.0, tau)
+  beta.fluor.sdi ~ dnorm(0.0, tau)
+  beta.fluor.humid ~ dnorm(0.0, tau)
+  beta.fluor.temp ~ dnorm(0.0, tau)
+  beta.cond.sla ~ dnorm(0.0, tau)
+  beta.cond.lwr ~ dnorm(0.0, tau)
+  beta.cond.lfarea ~ dnorm(0.0, tau)
+  beta.cond.spi ~ dnorm(0.0, tau)
+  beta.cond.sdi ~ dnorm(0.0, tau)
+  beta.cond.humid ~ dnorm(0.0, tau)
+  beta.cond.temp ~ dnorm(0.0, tau)
+  beta.trans.sla ~ dnorm(0.0, tau)
+  beta.trans.lwr ~ dnorm(0.0, tau)
+  beta.trans.lfarea ~ dnorm(0.0, tau)
+  beta.trans.spi ~ dnorm(0.0, tau)
+  beta.trans.sdi ~ dnorm(0.0, tau)
+  beta.trans.humid ~ dnorm(0.0, tau)
+  beta.trans.temp ~ dnorm(0.0, tau)
+  beta.wue.lftemp ~ dnorm(0.0, tau)
+  beta.wue.fluor ~ dnorm(0.0, tau)
+  beta.wue.cond ~ dnorm(0.0, tau)
+
+  ## individual plant effects
+  ##
+  for (i in 1:n.plant) {
+    beta.lftemp.0[i] ~ dnorm(0.0, tau.indiv.lftemp)
+    beta.fluor.0[i] ~ dnorm(0.0, tau.indiv.fluor)
+    beta.cond.0[i] ~ dnorm(0.0, tau.indiv.cond)
+    beta.trans.0[i] ~ dnorm(0.0, tau.indiv.trans)
+  }
+  ## assume no individual plant effect for WUE
+  ##
+  beta.wue.0 ~ dnorm(0.0, tau)
+
+  ## priors on precision parameters
+  ##
+  phi.lf[1:5,1:5] ~ dwish(Omega.lf, nu.lf)
+  phi.ph[1:4,1:4] ~ dwish(Omega.ph, nu.ph)
+  tau.wue ~ dgamma(nu, nu)
+  tau.indiv.lftemp ~ dgamma(nu, nu)
+  tau.indiv.fluor ~ dgamma(nu, nu)
+  tau.indiv.cond ~ dgamma(nu, nu)
+  tau.indiv.trans ~ dgamma(nu, nu)
+  ## convert precisions to covariance matrices and variance
+  ##
+  phx.lf[1:5,1:5] <- inverse(phi.lf[1:5,1:5])
+  phx.ph[1:4,1:4] <- inverse(phi.ph[1:4,1:4])
+  sigmasq.wue <- 1.0/tau.wue
+  sigmasq.indiv.lftemp <- 1.0/tau.indiv.lftemp
+  sigmasq.indiv.fluor <- 1.0/tau.indiv.fluor
+  sigmasq.indiv.cond <- 1.0/tau.indiv.cond
+  sigmasq.indiv.trans <- 1.0/tau.indiv.trans
+  ## calculate correlaton matrices
+  ##
+  for (i in 1:5) {
+    rho.lf[i,i] <- 1.0
+    for (j in (i+1):5) {
+      rho.lf[i,j] <- phx.lf[i,j]/(sqrt(phx.lf[i,i])*sqrt(phx.lf[j,j]))
+      rho.lf[j,i] <- rho.lf[i,j]
+    }
+  }
+  for (i in 1:4) {
+    rho.ph[i,i] <- 1.0
+    for (j in (i+1):4) {
+      rho.ph[i,j] <- phx.ph[i,j]/(sqrt(phx.ph[i,i])*sqrt(phx.ph[j,j]))
+      rho.ph[j,i] <- rho.ph[i,j]
+    }
+  }
+}
